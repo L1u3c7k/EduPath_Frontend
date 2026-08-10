@@ -1,17 +1,16 @@
-// src/App.jsx
-import React from 'react';
-import { Home } from "./scene/Example_Scene";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import Login from './scene/Login/Login'
+import './App.css'
 
 function App() {
   return (
     <BrowserRouter basename="/EduPath">
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path='/example_route' element={<h1>This is element</h1>}/>
+        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
       </Routes>
     </BrowserRouter>
-  );
+  )
 }
 
-export default App;
+export default App

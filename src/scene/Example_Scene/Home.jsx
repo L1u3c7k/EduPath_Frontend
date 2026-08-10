@@ -1,5 +1,4 @@
 // src/scene/Home.jsx
-import React from 'react';
 import { Container, Typography, Button } from '@mui/material';
 import { Header } from '../../components/Example_Components_folder'
 

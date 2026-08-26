@@ -3,6 +3,7 @@ import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined'
+import { Link } from 'react-router-dom'
 import mentoraLogo from '../../assets/mentora-logo.png'
 
 function Login() {
@@ -61,7 +62,7 @@ function Login() {
 
           <p className="signup-copy">
             Don’t have an account?
-            <a className="text-link" href="#sign-up">Sign Up</a>
+            <Link className="text-link" to="/signup">Sign Up</Link>
           </p>
         </form>
       </section>

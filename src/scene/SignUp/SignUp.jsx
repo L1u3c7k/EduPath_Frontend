@@ -70,7 +70,7 @@ function SignUp() {
 
           <p className="signup-copy">
             Already have an account?
-            <Link className="text-link" to="/login">Sign in</Link>
+            <Link className="text-link" to="/auth/login">Sign in</Link>
           </p>
         </form>
       </section>

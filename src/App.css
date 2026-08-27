@@ -229,9 +229,12 @@
 .brand-copy {
   position: absolute;
   top: 62.64%;
-  left: 12.61%;
-  width: 82.2%;
+  left: 0;
+  width: 100%;
+  padding: 0 clamp(40px, 6.6vw, 100px);
+  box-sizing: border-box;
   color: #2f4860;
+  text-align: left;
 }
 
 .brand-copy h2 {
@@ -242,7 +245,7 @@
 }
 
 .brand-copy p {
-  width: 94.6%;
+  width: 100%;
   margin: 0;
   font-size: clamp(15px, 1.32vw, 20px);
   font-weight: 500;

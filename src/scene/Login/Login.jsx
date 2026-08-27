@@ -62,7 +62,7 @@ function Login() {
 
           <p className="signup-copy">
             Don’t have an account?
-            <Link className="text-link" to="/signup">Sign Up</Link>
+            <Link className="text-link" to="/auth/signup">Sign Up</Link>
           </p>
         </form>
       </section>

@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import Login from './scene/Login/Login'
 import SignUp from './scene/SignUp/SignUp'
+import Dashboard from './scene/Dashboard/Dashboard'
 import './App.css'
 
 const authPages = {
@@ -21,6 +22,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/auth/signup" replace />} />
         <Route path="/auth/:mode" element={<AuthPage />} />
+        <Route path="/dashboard" element={<Dashboard />} />
 
         {/* Keep the original URLs working. */}
         <Route path="/signup" element={<Navigate to="/auth/signup" replace />} />

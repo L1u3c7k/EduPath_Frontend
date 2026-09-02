@@ -1,7 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
-import Login from './scene/Login/Login'
-import SignUp from './scene/SignUp/SignUp'
-import Dashboard from './scene/Dashboard/Dashboard'
+import { Login } from './scene/Login'
+import { SignUp } from './scene/SignUp'
+import { Dashboard } from './scene/Dashboard'
 import './App.css'
 
 const authPages = {

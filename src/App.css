@@ -83,7 +83,7 @@
   background: transparent;
   color: #2f4860;
   font: inherit;
-  font-size: clamp(18px, 1.6vw, 24px);
+  font-size: clamp(16px, 16px, 24px);
 }
 
 .input-wrap input::placeholder {

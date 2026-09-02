@@ -54,7 +54,14 @@ function SignUp() {
             <label htmlFor="username">Username</label>
             <div className="input-wrap">
               <PersonOutlinedIcon aria-hidden="true" />
-              <input id="username" name="username" type="text" placeholder="Username" autoComplete="username" required />
+              <input
+                id="username"
+                name="username"
+                type="text"
+                placeholder="Username"
+                autoComplete="username"
+                required
+              />
             </div>
           </div>
 
@@ -62,14 +69,23 @@ function SignUp() {
             <label htmlFor="email">Email</label>
             <div className="input-wrap">
               <EmailOutlinedIcon aria-hidden="true" />
-              <input id="email" name="email" type="email" placeholder="Email" autoComplete="email" required />
+              <input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="Email"
+                autoComplete="email"
+                required
+              />
             </div>
           </div>
 
           <PasswordField id="password" label="Password" autoComplete="new-password" />
           <PasswordField id="confirm-password" label="Confirm Password" autoComplete="new-password" />
 
-          <button className="login-button" type="submit">Sign Up</button>
+          <button className="login-button" type="submit">
+            Sign Up
+          </button>
 
           <p className="signup-copy">
             Already have an account?
@@ -84,7 +100,11 @@ function SignUp() {
         </div>
 
         <div className="brand-copy">
-          <h2>Welcome to Mentora.<br />Turn Knowledge Into Understanding.</h2>
+          <h2>
+            Welcome to Mentora.
+            <br />
+            Turn Knowledge Into Understanding.
+          </h2>
           <p>Ask questions, get meaningful explanations, and challenge yourself with AI-generated quizzes based on what you learn.</p>
         </div>
       </aside>

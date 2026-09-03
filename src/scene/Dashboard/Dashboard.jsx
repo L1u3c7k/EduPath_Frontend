@@ -58,6 +58,17 @@ function Dashboard() {
     }
   }, [])
 
+  useEffect(() => {
+    const mobileQuery = window.matchMedia('(max-width: 720px)')
+    const handleViewportChange = (event) => {
+      setSidebarOpen(!event.matches)
+      if (!event.matches) setResourcesOpen(false)
+    }
+
+    mobileQuery.addEventListener('change', handleViewportChange)
+    return () => mobileQuery.removeEventListener('change', handleViewportChange)
+  }, [])
+
   const submitPrompt = (event) => {
     event.preventDefault()
     const text = prompt.trim()
@@ -75,10 +86,12 @@ function Dashboard() {
   const startNewChat = () => {
     setMessages([])
     setPrompt('')
+    if (window.matchMedia('(max-width: 720px)').matches) setSidebarOpen(false)
   }
 
   const openChat = (chat) => {
     setMessages(chat === 'Prompt Engineering' ? initialMessages : [{ role: 'user', text: chat }])
+    if (window.matchMedia('(max-width: 720px)').matches) setSidebarOpen(false)
   }
 
   const toggleChat = (chat) => {
@@ -174,6 +187,9 @@ function Dashboard() {
           <span>Kira</span>
         </button>
       </aside>
+      {sidebarOpen && (
+        <button className="sidebar-backdrop" type="button" aria-label="Close sidebar" onClick={() => setSidebarOpen(false)} />
+      )}
 
       <section className="dashboard-main" aria-label="Chat with Mentora">
         {!sidebarOpen && (

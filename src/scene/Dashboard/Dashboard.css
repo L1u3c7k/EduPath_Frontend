@@ -2,6 +2,7 @@
   --sidebar-width: clamp(250px, 21.2vw, 326px);
   --resources-width: clamp(250px, 21.2vw, 326px);
   height: 100svh;
+  min-height: 100dvh;
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr) var(--resources-width);
   color: #30485e;
@@ -13,6 +14,7 @@
 .dashboard-sidebar,
 .resources-panel {
   min-height: 100svh;
+  min-height: 100dvh;
   background: #f3f8fb;
   border: 1px solid rgb(47 72 96 / 48%);
 }
@@ -60,7 +62,7 @@
 
 .dashboard-brand-name {
   font-family: 'IM FELL Double Pica SC', Georgia, serif;
-  font-size: clamp(22px, 1.9vw, 29px);
+  font-size: clamp(1.375rem, 1.9vw, 1.8125rem);
   font-weight: 700;
   line-height: 1;
   text-shadow: 0 3px 6px rgb(0 0 0 / 18%);
@@ -107,7 +109,7 @@
 .sidebar-action {
   border: 0;
   background: transparent;
-  font-size: 17px;
+  font-size: 1rem;
   cursor: pointer;
   text-align: left;
 }
@@ -126,7 +128,7 @@
   outline: 0;
   color: #30485e;
   background: transparent;
-  font-size: 17px;
+  font-size: 1rem;
 }
 
 .chat-search input::placeholder {
@@ -135,14 +137,17 @@
 }
 
 .recent-chats {
+  flex: 1;
   min-height: 0;
   margin-top: 5px;
-  overflow: visible;
+  overflow-x: visible;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .recent-chats h2 {
   margin: 0 0 8px;
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 
 .recent-group {
@@ -163,7 +168,7 @@
   color: #405b72;
   background: transparent;
   border: 0;
-  font-size: 16px;
+  font-size: 1rem;
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -239,7 +244,7 @@
   position: absolute;
   z-index: 5;
   top: 38px;
-  right: -64px;
+  right: 0;
   width: 146px;
   padding: 10px 0;
   background: #f7fafc;
@@ -257,7 +262,7 @@
   color: #405b72;
   background: transparent;
   border: 0;
-  font-size: 16px;
+  font-size: 1rem;
   text-align: left;
   cursor: pointer;
 }
@@ -283,7 +288,7 @@
   border: 1px solid #8aa1b4;
   border-radius: 7px;
   outline: 0;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .recent-child {
@@ -318,7 +323,7 @@
   border: 1px solid rgb(47 72 96 / 30%);
   border-radius: 18px;
   box-shadow: 0 3px 4px rgb(34 51 68 / 22%);
-  font-size: 19px;
+  font-size: 1.1875rem;
   cursor: pointer;
 }
 
@@ -331,7 +336,7 @@
   background: linear-gradient(145deg, #2f4860, #8aa1b4);
   border: 4px solid #eee9e1;
   border-radius: 50%;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 700;
 }
 
@@ -339,6 +344,7 @@
   position: relative;
   min-width: 0;
   height: 100svh;
+  height: 100dvh;
   padding: 42px 40px 23px;
 }
 
@@ -369,7 +375,7 @@
 }
 
 .message {
-  font-size: clamp(15px, 1.25vw, 18px);
+  font-size: clamp(0.9375rem, 1.25vw, 1.125rem);
   line-height: 1.42;
   white-space: pre-line;
 }
@@ -394,7 +400,7 @@
 .conversation h1 {
   margin: auto 0 35px;
   color: #326b9f;
-  font-size: clamp(27px, 2.2vw, 34px);
+  font-size: clamp(1.625rem, 2.2vw, 2.125rem);
   font-weight: 600;
   text-align: center;
 }
@@ -423,7 +429,7 @@
   outline: 0;
   color: #30485e;
   background: transparent;
-  font-size: 16px;
+  font-size: 1rem;
 }
 
 .prompt-form input::placeholder {
@@ -470,7 +476,7 @@
 
 .resources-panel h2 {
   margin: 0;
-  font-size: 27px;
+  font-size: 1.625rem;
 }
 
 .resource-card {
@@ -478,14 +484,14 @@
   flex-direction: column;
   margin-top: 40px;
   color: #30485e;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.35;
   text-decoration: none;
 }
 
 .resource-card strong {
   max-width: 205px;
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 
 .resource-card:hover strong {
@@ -495,7 +501,8 @@
 .resources-close,
 .resources-mobile-button,
 .floating-menu,
-.dashboard-backdrop {
+.dashboard-backdrop,
+.sidebar-backdrop {
   display: none;
 }
 
@@ -607,7 +614,7 @@
   }
 
   .dashboard-brand-name {
-    font-size: 21px;
+    font-size: 1.3125rem;
   }
 
   .message-user {
@@ -629,6 +636,7 @@
     position: fixed;
     inset: 0 auto 0 0;
     width: min(320px, 88vw);
+    max-width: calc(100vw - 48px);
   }
 
   .dashboard.sidebar-collapsed .dashboard-sidebar {
@@ -642,17 +650,26 @@
   .floating-menu {
     position: fixed;
     z-index: 1;
-    top: 14px;
-    left: 14px;
+    top: max(14px, env(safe-area-inset-top));
+    left: max(14px, env(safe-area-inset-left));
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    z-index: 2;
+    inset: 0;
+    display: block;
+    background: rgb(26 40 52 / 25%);
+    border: 0;
   }
 
   .dashboard-main {
-    height: 100svh;
-    padding: 62px 15px 14px;
+    height: 100dvh;
+    padding: max(62px, calc(48px + env(safe-area-inset-top))) 15px max(14px, env(safe-area-inset-bottom));
   }
 
   .message {
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 
   .message-user {
@@ -709,6 +726,34 @@
 
 }
 
+@media (max-width:360px) {
+  .dashboard-sidebar {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .resources-mobile-button {
+    padding: 7px 9px;
+  }
+
+  .conversation h1 {
+    font-size: 1.5rem;
+  }
+
+  .message-user {
+    max-width: 96%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard,
+  .dashboard-sidebar,
+  .resources-panel,
+  .chat-expand-button svg {
+    transition: none;
+  }
+}
+
 @media (max-height:700px) and (min-width:721px) {
   .dashboard-main {
     padding-top: 24px;
@@ -720,7 +765,7 @@
   }
 
   .message {
-    font-size: 14px;
+    font-size: 0.875rem;
     line-height: 1.38;
   }
 

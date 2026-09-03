@@ -1,13 +1,9 @@
-import { useState } from 'react'
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
-import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined'
 import { Link, useNavigate } from 'react-router-dom'
-import mentoraLogo from '../../assets/mentora-logo.png'
+import AuthBrandPanel from '../../components/auth/AuthBrandPanel'
+import PasswordField from '../../components/auth/PasswordField'
 
 function Login() {
-  const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
 
   const handleSubmit = (event) => {
@@ -29,28 +25,7 @@ function Login() {
             </div>
           </div>
 
-          <div className="field-group">
-            <label htmlFor="password">Password</label>
-            <div className="input-wrap">
-              <LockOutlinedIcon aria-hidden="true" />
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Password"
-                autoComplete="current-password"
-                required
-              />
-              <button
-                className="visibility-button"
-                type="button"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                onClick={() => setShowPassword((visible) => !visible)}
-              >
-                {showPassword ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}
-              </button>
-            </div>
-          </div>
+          <PasswordField id="password" label="Password" autoComplete="current-password" />
 
           <div className="login-options">
             <label className="remember-label">
@@ -69,16 +44,7 @@ function Login() {
         </form>
       </section>
 
-      <aside className="brand-section" aria-label="About Mentora">
-        <div className="brand-mark">
-          <img src={mentoraLogo} alt="Mentora" />
-        </div>
-
-        <div className="brand-copy">
-          <h2>Welcome to Mentora.<br />Turn Knowledge Into Understanding.</h2>
-          <p>Ask questions, get meaningful explanations, and challenge yourself with AI-generated quizzes based on what you learn.</p>
-        </div>
-      </aside>
+      <AuthBrandPanel />
     </main>
   )
 }

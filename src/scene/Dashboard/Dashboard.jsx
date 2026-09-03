@@ -1,31 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import ArrowUpwardRoundedIcon from '@mui/icons-material/ArrowUpwardRounded'
-import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded'
 import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import mentoraOwlLogo from '../../assets/mentora-owl-logo.png'
+import ConversationPanel from '../../components/dashboard/ConversationPanel'
+import ResourcesPanel from '../../components/dashboard/ResourcesPanel'
+import { NewChatIcon, SidebarIcon } from '../../components/dashboard/DashboardIcons'
 import './Dashboard.css'
-
-function SidebarIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="3" y="3" width="18" height="18" rx="2.5" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M9 3.5v17" stroke="currentColor" strokeWidth="1.8" />
-    </svg>
-  )
-}
-
-function NewChatIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M11 4H5.75A1.75 1.75 0 0 0 4 5.75v12.5C4 19.22 4.78 20 5.75 20h12.5A1.75 1.75 0 0 0 20 18.25V13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="m17.25 3.75 3 3L11.5 15.5H8.5v-3l8.75-8.75Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
 
 const initialMessages = [
   { role: 'user', text: 'What is prompt engineering?' },
@@ -198,41 +181,15 @@ function Dashboard() {
           </button>
         )}
         <button className="resources-mobile-button" type="button" onClick={() => setResourcesOpen(true)}>Resources</button>
-        <div className={`conversation ${messages.length ? '' : 'conversation-empty'}`}>
-          {!messages.length && <h1>How can I help you today?</h1>}
-          <div className="message-list" aria-live="polite">
-            {messages.map((message, index) => (
-              <article className={`message message-${message.role}`} key={`${message.role}-${index}`}>
-                {message.text}
-              </article>
-            ))}
-          </div>
-          <form className="prompt-form" onSubmit={submitPrompt}>
-            <input value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Ask anything..." aria-label="Ask Mentora anything" />
-            <button type="submit" aria-label="Send message" disabled={!prompt.trim()}>
-              <ArrowUpwardRoundedIcon />
-            </button>
-          </form>
-        </div>
+        <ConversationPanel
+          messages={messages}
+          prompt={prompt}
+          onPromptChange={(event) => setPrompt(event.target.value)}
+          onSubmit={submitPrompt}
+        />
       </section>
 
-      <aside className={`resources-panel ${resourcesOpen ? 'mobile-open' : ''}`} aria-label="Resources">
-        <div className="resources-title-row">
-          <h2>Resources</h2>
-          <button className="dashboard-icon-button resources-close" type="button" aria-label="Close resources" onClick={() => setResourcesOpen(false)}>
-            <CloseRoundedIcon />
-          </button>
-        </div>
-        {messages.length > 0 && (
-          <a className="resource-card" href="https://www.edfreitas.me/" target="_blank" rel="noreferrer">
-            <strong>Prompt Engineering for Developers</strong>
-            <span>by Ed Freitas</span>
-          </a>
-        )}
-      </aside>
-      {resourcesOpen && (
-        <button className="dashboard-backdrop" type="button" aria-label="Close resources" onClick={() => setResourcesOpen(false)} />
-      )}
+      <ResourcesPanel isOpen={resourcesOpen} hasMessages={messages.length > 0} onClose={() => setResourcesOpen(false)} />
     </main>
   )
 }

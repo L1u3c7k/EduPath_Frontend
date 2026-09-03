@@ -3,14 +3,16 @@ import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import mentoraLogo from '../../assets/mentora-logo.png'
 
 function Login() {
   const [showPassword, setShowPassword] = useState(false)
+  const navigate = useNavigate()
 
   const handleSubmit = (event) => {
     event.preventDefault()
+    navigate('/dashboard')
   }
 
   return (
@@ -62,7 +64,7 @@ function Login() {
 
           <p className="signup-copy">
             Don’t have an account?
-            <Link className="text-link" to="/signup">Sign Up</Link>
+            <Link className="text-link" to="/auth/signup">Sign Up</Link>
           </p>
         </form>
       </section>

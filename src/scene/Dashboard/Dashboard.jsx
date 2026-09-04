@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded'
 import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
 import mentoraOwlLogo from '../../assets/mentora-owl-logo.png'
 import ConversationPanel from '../../components/dashboard/ConversationPanel'
 import ResourcesPanel from '../../components/dashboard/ResourcesPanel'
 import { NewChatIcon, SidebarIcon } from '../../components/dashboard/DashboardIcons'
+import { Settings } from '../Settings'
 import './Dashboard.css'
 
 const initialMessages = [
@@ -16,6 +20,7 @@ const initialMessages = [
 ]
 
 function Dashboard() {
+  const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 720)
   const [resourcesOpen, setResourcesOpen] = useState(false)
   const [prompt, setPrompt] = useState('')
@@ -26,12 +31,17 @@ function Dashboard() {
   const [openMenu, setOpenMenu] = useState(null)
   const [editingChat, setEditingChat] = useState(null)
   const [editValue, setEditValue] = useState('')
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [username, setUsername] = useState('Kira')
   const menuRef = useRef(null)
+  const profileMenuRef = useRef(null)
   const visibleChats = useMemo(() => chats.filter((chat) => chat.toLowerCase().includes(search.toLowerCase())), [chats, search])
 
   useEffect(() => {
     const closeMenu = (event) => {
       if (event.key === 'Escape' || (event.type === 'pointerdown' && !menuRef.current?.contains(event.target))) setOpenMenu(null)
+      if (event.key === 'Escape' || (event.type === 'pointerdown' && !profileMenuRef.current?.contains(event.target))) setProfileMenuOpen(false)
     }
     document.addEventListener('pointerdown', closeMenu)
     document.addEventListener('keydown', closeMenu)
@@ -165,10 +175,44 @@ function Dashboard() {
             </div>
           ))}
         </section>
-        <button className="profile-pill" type="button">
-          <span className="profile-avatar" aria-hidden="true">K</span>
-          <span>Kira</span>
-        </button>
+        <div className="profile-menu-wrap" ref={profileMenuRef}>
+          {profileMenuOpen && (
+            <div className="profile-menu" role="menu" aria-label="Profile options">
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setProfileMenuOpen(false)
+                  setSettingsOpen(true)
+                }}
+              >
+                <SettingsOutlinedIcon />
+                <span>Settings</span>
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setProfileMenuOpen(false)
+                  navigate('/')
+                }}
+              >
+                <LogoutRoundedIcon />
+                <span>Log out</span>
+              </button>
+            </div>
+          )}
+          <button
+            className="profile-pill"
+            type="button"
+            aria-haspopup="menu"
+            aria-expanded={profileMenuOpen}
+            onClick={() => setProfileMenuOpen((open) => !open)}
+          >
+            <span className="profile-avatar" aria-hidden="true">K</span>
+            <span>{username}</span>
+          </button>
+        </div>
       </aside>
       {sidebarOpen && (
         <button className="sidebar-backdrop" type="button" aria-label="Close sidebar" onClick={() => setSidebarOpen(false)} />
@@ -190,6 +234,8 @@ function Dashboard() {
       </section>
 
       <ResourcesPanel isOpen={resourcesOpen} hasMessages={messages.length > 0} onClose={() => setResourcesOpen(false)} />
+
+      <Settings isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} username={username} onUsernameChange={setUsername} />
     </main>
   )
 }

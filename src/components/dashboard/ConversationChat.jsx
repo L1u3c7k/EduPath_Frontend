@@ -1,11 +1,21 @@
 import ArrowUpwardRoundedIcon from '@mui/icons-material/ArrowUpwardRounded'
 import AssistantChat from './AssistantChat'
+import InitialChat from './InitialChat'
 import UserChat from './UserChat'
 
-function ConversationPanel({ messages, prompt, onPromptChange, onSubmit }) {
+function ConversationChat({ messages, prompt, onPromptChange, onSubmit }) {
+  if (!messages.length) {
+    return (
+      <InitialChat
+        prompt={prompt}
+        onPromptChange={onPromptChange}
+        onSubmit={onSubmit}
+      />
+    )
+  }
+
   return (
-    <div className={`conversation ${messages.length ? '' : 'conversation-empty'}`}>
-      {!messages.length && <h1>How can I help you today?</h1>}
+    <div className="conversation">
       <div className="message-list" aria-live="polite">
         {messages.map((message, index) => {
           const ChatMessage = message.role === 'assistant' ? AssistantChat : UserChat
@@ -14,7 +24,12 @@ function ConversationPanel({ messages, prompt, onPromptChange, onSubmit }) {
         })}
       </div>
       <form className="prompt-form" onSubmit={onSubmit}>
-        <input value={prompt} onChange={onPromptChange} placeholder="Ask anything..." aria-label="Ask Mentora anything" />
+        <input
+          value={prompt}
+          onChange={onPromptChange}
+          placeholder="Ask anything..."
+          aria-label="Ask Mentora anything"
+        />
         <button type="submit" aria-label="Send message" disabled={!prompt.trim()}>
           <ArrowUpwardRoundedIcon />
         </button>
@@ -23,4 +38,4 @@ function ConversationPanel({ messages, prompt, onPromptChange, onSubmit }) {
   )
 }
 
-export default ConversationPanel
+export default ConversationChat

@@ -8,7 +8,7 @@ import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
 import mentoraOwlLogo from '../../assets/mentora-owl-logo.png'
-import ConversationPanel from '../../components/dashboard/ConversationPanel'
+import ConversationChat from '../../components/dashboard/ConversationChat'
 import ResourcesPanel from '../../components/dashboard/ResourcesPanel'
 import { NewChatIcon, SidebarIcon } from '../../components/dashboard/DashboardIcons'
 import { Settings } from '../Settings'
@@ -225,7 +225,7 @@ function Dashboard() {
           </button>
         )}
         <button className="resources-mobile-button" type="button" onClick={() => setResourcesOpen(true)}>Resources</button>
-        <ConversationPanel
+        <ConversationChat
           messages={messages}
           prompt={prompt}
           onPromptChange={(event) => setPrompt(event.target.value)}

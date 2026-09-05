@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }) => {
     return () => {
       isMounted = false; // Cleanup flag when component unmounts
     }
-  }, [applyToken, navigate])
+  }, [])
 
   const login = async (credentials) => {
     const data = await loginApi(credentials)

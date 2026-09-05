@@ -1,75 +1,103 @@
 import axios from "axios";
+import { refreshAccessTokenApi } from "./authApi"; // Import your raw refresh function
 
-
-// Axios lives outside React, so these handlers are bound from AuthContext.
-// The access token itself is stored in React state, not here.
 let getAccessToken = () => null;
-let syncAccessToken = () => { };
-let onUnauthorized = () => { };
+let syncAccessToken = () => {};
+let onUnauthorized = () => {};
 
 export const configureAuthHandlers = ({ getToken, setToken, onUnauthorized: handleUnauthorized }) => {
   getAccessToken = getToken;
   syncAccessToken = setToken;
   onUnauthorized = handleUnauthorized;
 };
+
 const API_URL = import.meta.env.VITE_MENTORA_BACKEND;
 
 const api = axios.create({
   baseURL: API_URL,
-  withCredentials: true, // Sends HttpOnly Cookie (Refresh Token) automatically
+  withCredentials: true,
 });
 
+// Queue management for concurrent 401 responses
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+// Request Interceptor
 api.interceptors.request.use(
   (config) => {
     const accessToken = getAccessToken();
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
-      console.log(`📤 Sending request to [${config.url}] with token:`, accessToken);
-    } else {
-      console.log(`📤 Sending request to [${config.url}] WITHOUT token`);
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
+// Response Interceptor
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
+    
     if (
       error.response?.status === 401 &&
-      originalRequest &&
       !originalRequest._retry &&
-      !originalRequest.url?.includes("/auth/login") &&
-      !originalRequest.url?.includes("/auth/signup") &&
-      !originalRequest.url?.includes("/auth/refresh_token")
+      !originalRequest.url.includes('/auth/refresh_token')
     ) {
-      console.warn(`⚠️ Request to [${originalRequest.url}] failed with 401 (Token Expired). Attempting refresh...`);
+      if (isRefreshing) {
+        
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
-        const { refreshAccessTokenApi } = await import("./authApi");
+        
         const newAccessToken = await refreshAccessTokenApi();
-
-        console.log("✅ Received new access token:", newAccessToken);
+        
+        
         syncAccessToken(newAccessToken);
 
+        // 2. Attach new token to the original failed request
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        console.log(`🔄 Retrying original request to [${originalRequest.url}] with new token.`);
+
+        // 3. Resolve queued requests
+        processQueue(null, newAccessToken);
+
+        // 4. Retry original request
         return api(originalRequest);
       } catch (refreshError) {
-        console.error("❌ Token refresh failed. User will be logged out:", refreshError);
-        syncAccessToken(null);
-        onUnauthorized();
+        processQueue(refreshError, null);
+        onUnauthorized(); 
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 
     return Promise.reject(error);
   }
 );
-
 
 export default api;

@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
-
+import Dashboard from "./scene/Dashboard/Dashboard";
 import Login from "./scene/Login/Login";
 import SignUp from "./scene/SignUp/SignUp";
 
@@ -31,9 +31,9 @@ const PublicRoute = () => {
     return <div className="loading-spinner">Loading...</div>;
   }
 
-  // If user already has a valid token/session, auto-switch to dashboard
   if (isAuthenticated) {
-    const from = location.state?.from?.pathname || "/dashboard";
+    // FIX 1: Point to /app (matching your Route path)
+    const from = location.state?.from?.pathname || "/app";
     return <Navigate to={from} replace />;
   }
 
@@ -45,19 +45,22 @@ function App() {
     <BrowserRouter basename="/EduPath">
       <AuthProvider>
         <Routes>
-          {/* Public Routes - Auto-redirects to /dashboard if logged in */}
+          {/* Default entry point redirect */}
+          <Route path="/" element={<Navigate to="/app" replace />} />
+
+          {/* Public Routes */}
           <Route element={<PublicRoute />}>
-            <Route path="/" element={<Login />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
           </Route>
 
           {/* Protected Routes */}
           <Route element={<PrivateRoute />}>
-            <Route path="/dashboard" element={<h1>Dashboard</h1>} />
+            <Route path="/app" element={<Dashboard />} />
           </Route>
 
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          {/* Fallback Catch-All */}
+          <Route path="*" element={<Navigate to="/app" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

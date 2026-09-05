@@ -8,6 +8,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import mentoraOwlLogo from '../../assets/mentora-owl-logo.png'
 import './Dashboard.css'
+import { fetchGetChatSessions } from '../../api/chatApi'
 
 function SidebarIcon() {
   return (
@@ -38,13 +39,42 @@ function Dashboard() {
   const [prompt, setPrompt] = useState('')
   const [search, setSearch] = useState('')
   const [messages, setMessages] = useState([])
-  const [chats, setChats] = useState([])
+  const [chats, setChats] = useState([])//Store chat titles
   const [expandedChats, setExpandedChats] = useState([])
   const [openMenu, setOpenMenu] = useState(null)
   const [editingChat, setEditingChat] = useState(null)
   const [editValue, setEditValue] = useState('')
   const menuRef = useRef(null)
-  const visibleChats = useMemo(() => chats.filter((chat) => chat.toLowerCase().includes(search.toLowerCase())), [chats, search])
+  const visibleChats = useMemo(
+    () => chats.filter((chat) => typeof chat === 'string' && chat.toLowerCase().includes(search.toLowerCase())),
+    [chats, search]
+  )
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadChatSessions = async () => {
+      try {
+        const data = await fetchGetChatSessions();
+        if (!isMounted || !data) return;
+
+        // Map backend response into an array of string titles
+        // Handles both array of objects [{ title: "..." }] or array of strings ["..."]
+        const sessionTitles = Array.isArray(data)
+          ? data.map((item) => (typeof item === 'object' ? item.title || item.name || 'Untitled Chat' : item))
+          : [];
+
+        setChats(sessionTitles);
+      } catch (error) {
+        console.error('Failed to load chat sessions:', error);
+      }
+    };
+
+    loadChatSessions();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     const closeMenu = (event) => {

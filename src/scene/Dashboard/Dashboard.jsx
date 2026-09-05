@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import ArrowUpwardRoundedIcon from '@mui/icons-material/ArrowUpwardRounded'
-import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
+import { useNavigate } from 'react-router-dom'
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded'
 import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
 import mentoraOwlLogo from '../../assets/mentora-owl-logo.png'
+import ConversationChat from '../../components/dashboard/ConversationChat'
+import ResourcesPanel from '../../components/dashboard/ResourcesPanel'
+import { NewChatIcon, SidebarIcon } from '../../components/dashboard/DashboardIcons'
+import { Settings } from '../Settings'
 import './Dashboard.css'
 import { fetchGetChatSessions } from '../../api/chatApi'
 
@@ -34,6 +39,7 @@ const initialMessages = [
 ]
 
 function Dashboard() {
+  const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 720)
   const [resourcesOpen, setResourcesOpen] = useState(false)
   const [prompt, setPrompt] = useState('')
@@ -44,6 +50,9 @@ function Dashboard() {
   const [openMenu, setOpenMenu] = useState(null)
   const [editingChat, setEditingChat] = useState(null)
   const [editValue, setEditValue] = useState('')
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [username, setUsername] = useState('Kira')
   const menuRef = useRef(null)
   const visibleChats = useMemo(
     () => chats.filter((chat) => typeof chat === 'string' && chat.toLowerCase().includes(search.toLowerCase())),
@@ -79,6 +88,7 @@ function Dashboard() {
   useEffect(() => {
     const closeMenu = (event) => {
       if (event.key === 'Escape' || (event.type === 'pointerdown' && !menuRef.current?.contains(event.target))) setOpenMenu(null)
+      if (event.key === 'Escape' || (event.type === 'pointerdown' && !profileMenuRef.current?.contains(event.target))) setProfileMenuOpen(false)
     }
     document.addEventListener('pointerdown', closeMenu)
     document.addEventListener('keydown', closeMenu)
@@ -86,6 +96,17 @@ function Dashboard() {
       document.removeEventListener('pointerdown', closeMenu)
       document.removeEventListener('keydown', closeMenu)
     }
+  }, [])
+
+  useEffect(() => {
+    const mobileQuery = window.matchMedia('(max-width: 720px)')
+    const handleViewportChange = (event) => {
+      setSidebarOpen(!event.matches)
+      if (!event.matches) setResourcesOpen(false)
+    }
+
+    mobileQuery.addEventListener('change', handleViewportChange)
+    return () => mobileQuery.removeEventListener('change', handleViewportChange)
   }, [])
 
   const submitPrompt = (event) => {
@@ -105,10 +126,12 @@ function Dashboard() {
   const startNewChat = () => {
     setMessages([])
     setPrompt('')
+    if (window.matchMedia('(max-width: 720px)').matches) setSidebarOpen(false)
   }
 
   const openChat = (chat) => {
     setMessages(chat === 'Prompt Engineering' ? initialMessages : [{ role: 'user', text: chat }])
+    if (window.matchMedia('(max-width: 720px)').matches) setSidebarOpen(false)
   }
 
   const toggleChat = (chat) => {
@@ -199,11 +222,48 @@ function Dashboard() {
             </div>
           ))}
         </section>
-        <button className="profile-pill" type="button">
-          <span className="profile-avatar" aria-hidden="true">K</span>
-          <span>Kira</span>
-        </button>
+        <div className="profile-menu-wrap" ref={profileMenuRef}>
+          {profileMenuOpen && (
+            <div className="profile-menu" role="menu" aria-label="Profile options">
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setProfileMenuOpen(false)
+                  setSettingsOpen(true)
+                }}
+              >
+                <SettingsOutlinedIcon />
+                <span>Settings</span>
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setProfileMenuOpen(false)
+                  navigate('/')
+                }}
+              >
+                <LogoutRoundedIcon />
+                <span>Log out</span>
+              </button>
+            </div>
+          )}
+          <button
+            className="profile-pill"
+            type="button"
+            aria-haspopup="menu"
+            aria-expanded={profileMenuOpen}
+            onClick={() => setProfileMenuOpen((open) => !open)}
+          >
+            <span className="profile-avatar" aria-hidden="true">K</span>
+            <span>{username}</span>
+          </button>
+        </div>
       </aside>
+      {sidebarOpen && (
+        <button className="sidebar-backdrop" type="button" aria-label="Close sidebar" onClick={() => setSidebarOpen(false)} />
+      )}
 
       <section className="dashboard-main" aria-label="Chat with Mentora">
         {!sidebarOpen && (
@@ -212,41 +272,17 @@ function Dashboard() {
           </button>
         )}
         <button className="resources-mobile-button" type="button" onClick={() => setResourcesOpen(true)}>Resources</button>
-        <div className={`conversation ${messages.length ? '' : 'conversation-empty'}`}>
-          {!messages.length && <h1>How can I help you today?</h1>}
-          <div className="message-list" aria-live="polite">
-            {messages.map((message, index) => (
-              <article className={`message message-${message.role}`} key={`${message.role}-${index}`}>
-                {message.text}
-              </article>
-            ))}
-          </div>
-          <form className="prompt-form" onSubmit={submitPrompt}>
-            <input value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Ask anything..." aria-label="Ask Mentora anything" />
-            <button type="submit" aria-label="Send message" disabled={!prompt.trim()}>
-              <ArrowUpwardRoundedIcon />
-            </button>
-          </form>
-        </div>
+        <ConversationChat
+          messages={messages}
+          prompt={prompt}
+          onPromptChange={(event) => setPrompt(event.target.value)}
+          onSubmit={submitPrompt}
+        />
       </section>
 
-      <aside className={`resources-panel ${resourcesOpen ? 'mobile-open' : ''}`} aria-label="Resources">
-        <div className="resources-title-row">
-          <h2>Resources</h2>
-          <button className="dashboard-icon-button resources-close" type="button" aria-label="Close resources" onClick={() => setResourcesOpen(false)}>
-            <CloseRoundedIcon />
-          </button>
-        </div>
-        {messages.length > 0 && (
-          <a className="resource-card" href="https://www.edfreitas.me/" target="_blank" rel="noreferrer">
-            <strong>Prompt Engineering for Developers</strong>
-            <span>by Ed Freitas</span>
-          </a>
-        )}
-      </aside>
-      {resourcesOpen && (
-        <button className="dashboard-backdrop" type="button" aria-label="Close resources" onClick={() => setResourcesOpen(false)} />
-      )}
+      <ResourcesPanel isOpen={resourcesOpen} hasMessages={messages.length > 0} onClose={() => setResourcesOpen(false)} />
+
+      <Settings isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} username={username} onUsernameChange={setUsername} />
     </main>
   )
 }

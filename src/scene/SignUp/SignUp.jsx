@@ -1,14 +1,11 @@
-import { useState } from 'react'
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined'
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
-import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
+import AuthBrandPanel from '../../components/auth/AuthBrandPanel'
+import PasswordField from '../../components/auth/PasswordField'
 import mentoraLogo from '../../assets/mentora-logo.png'
 
-function PasswordField({ id, label, autoComplete, value, onChange }) {
+function PasswordField({ id, label, autoComplete }) {
   const [isVisible, setIsVisible] = useState(false)
 
   return (
@@ -20,10 +17,8 @@ function PasswordField({ id, label, autoComplete, value, onChange }) {
           id={id}
           name={id}
           type={isVisible ? 'text' : 'password'}
-          placeholder={label}
+          placeholder="Password"
           autoComplete={autoComplete}
-          value={value}
-          onChange={onChange}
           required
         />
         <button
@@ -165,20 +160,7 @@ function SignUp() {
         </form>
       </section>
 
-      <aside className="brand-section" aria-label="About Mentora">
-        <div className="brand-mark">
-          <img src={mentoraLogo} alt="Mentora" />
-        </div>
-
-        <div className="brand-copy">
-          <h2>
-            Welcome to Mentora.
-            <br />
-            Turn Knowledge Into Understanding.
-          </h2>
-          <p>Ask questions, get meaningful explanations, and challenge yourself with AI-generated quizzes based on what you learn.</p>
-        </div>
-      </aside>
+      <AuthBrandPanel />
     </main>
   )
 }

@@ -4,7 +4,9 @@ import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined'
-import { useAuth } from '../../context/AuthContext'
+import { Link, useNavigate } from 'react-router-dom'
+import AuthBrandPanel from '../../components/auth/AuthBrandPanel'
+import PasswordField from '../../components/auth/PasswordField'
 import mentoraLogo from '../../assets/mentora-logo.png'
 
 function Login() {
@@ -101,16 +103,7 @@ function Login() {
         </form>
       </section>
 
-      <aside className="brand-section" aria-label="About Mentora">
-        <div className="brand-mark">
-          <img src={mentoraLogo} alt="Mentora" />
-        </div>
-
-        <div className="brand-copy">
-          <h2>Welcome to Mentora.<br />Turn Knowledge Into Understanding.</h2>
-          <p>Ask questions, get meaningful explanations, and challenge yourself with AI-generated quizzes based on what you learn.</p>
-        </div>
-      </aside>
+      <AuthBrandPanel />
     </main>
   )
 }

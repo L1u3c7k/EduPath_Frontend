@@ -628,6 +628,9 @@
 .quiz-feedback-incorrect strong { color: #f20d16; }
 .quiz-feedback h3 { margin: 0 0 10px; color: #e2a000; font-size: 1rem; }
 .quiz-feedback p { margin: 0 0 14px; font-size: .83rem; }
+.quiz-feedback-final h3 { color: #3d5f8d; }
+.quiz-feedback-final .quiz-correct-answer { margin-top: 28px; color: #3d5f8d; }
+.quiz-correct-answer b { margin-right: 6px; font-size: 1.05rem; }
 
 .quiz-attempt {
   display: inline-block;
@@ -637,6 +640,24 @@
   border-radius: 6px;
   font-size: .78rem;
 }
+
+.generate-quiz-button {
+  width: calc(100% - 74px);
+  min-height: 76px;
+  margin: 110px 0 0 74px;
+  padding: 18px 24px;
+  color: #fff;
+  background: #304e69;
+  border: 0;
+  border-radius: 8px;
+  box-shadow: 0 3px 3px rgb(33 45 61 / 24%);
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.55rem;
+}
+
+.generate-quiz-button:hover { background: #29445d; }
+.generate-quiz-button:focus-visible { outline: 3px solid #88a8c4; outline-offset: 3px; }
 
 .message-list {
   min-height: 0;
@@ -1026,13 +1047,16 @@
   }
 
   .quiz-view h1,
-  .quiz-question-list {
+  .quiz-question-list,
+  .generate-quiz-button {
     margin-left: 0;
   }
 
   .quiz-question-list {
     gap: 36px;
   }
+
+  .generate-quiz-button { width: 100%; }
 
 }
 
@@ -1101,6 +1125,7 @@
   .quiz-intro { margin-left: 0; gap: 15px; }
   .quiz-mentor-avatar { width: 50px; height: 50px; }
   .quiz-question-list { gap: 28px; margin-left: 0; }
+  .generate-quiz-button { width: 100%; min-height: 64px; margin: 70px 0 0; font-size: 1.3rem; }
   .quiz-card { min-height: 0; padding: 20px 14px 25px; }
   .quiz-answer-form { height: 58px; }
   .quiz-answer-form button { width: 68px; height: 58px; }
@@ -1167,6 +1192,7 @@
   .quiz-intro strong { font-size: 1.1rem; }
   .quiz-intro p { font-size: .9rem; }
   .quiz-question-list { gap: 22px; }
+  .generate-quiz-button { min-height: 58px; margin-top: 48px; font-size: 1.1rem; }
   .quiz-card { padding: 16px 10px 20px; }
   .quiz-number { font-size: .9rem; }
   .quiz-card > p { min-height: 0; margin: 14px 4px; line-height: 1.45; }

@@ -1,19 +1,21 @@
-import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded'
-import CheckRoundedIcon from '@mui/icons-material/CheckRounded'
-import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import { useState } from 'react'
-import assistantProfile from '../../assets/assistant-profile.png'
+import GenerateQuizButton from './quiz/GenerateQuizButton'
+import QuizCard from './quiz/QuizCard'
+import QuizIntro from './quiz/QuizIntro'
 
 const questions = [
-  { text: 'Name one characteristic of a good prompt.', answers: ['clear', 'clarity', 'specific', 'context'], hint: 'Think about the qualities that make instructions easy for an AI to understand.' },
-  { text: 'What is the main benefit of making a prompt specific?', answers: ['accurate', 'relevant', 'precise', 'desired response'], hint: 'Think about how clear instructions help the AI understand exactly what kind of response you want.' },
-  { text: 'You need to compare Python and Java clearly. Which prompt is best?', answers: ['compare python and java', 'table'], hint: 'Include the subjects, format, and specific comparison criteria in your prompt.' },
-  { text: 'Why should a prompt include clear instructions?', answers: ['understand', 'desired response', 'accurate', 'task'], hint: 'Consider how instructions guide the AI toward the intended task and result.' },
-  { text: 'Which prompt demonstrates strong prompt-engineering practices?', answers: ['clear', 'specific', 'context', 'format', 'details'], hint: 'Think about how adding clear details helps the AI understand your expected result.' },
+  { text: 'Name one characteristic of a good prompt.', answers: ['clear', 'clarity', 'specific', 'context'], hint: 'Think about the qualities that make instructions easy for an AI to understand.', explanation: 'A good prompt clearly communicates what you want the AI to do.', correctAnswer: 'Clear' },
+  { text: 'What is the main benefit of making a prompt specific?', answers: ['accurate', 'relevant', 'precise', 'desired response'], hint: 'Think about how clear instructions help the AI understand exactly what kind of response you want.', explanation: 'A specific prompt gives the AI clear details about what you want. This reduces ambiguity and helps the AI generate a response that is more relevant, focused, and useful.', correctAnswer: 'It helps the AI understand exactly what you want' },
+  { text: 'You need to compare Python and Java clearly. Which prompt is best?', answers: ['compare python and java', 'table'], hint: 'Include the subjects, format, and specific comparison criteria in your prompt.', explanation: 'A strong comparison prompt names both subjects, specifies the format, and identifies the criteria to compare.', correctAnswer: 'Compare Python and Java in a table using learning difficulty, performance, and common use cases.' },
+  { text: 'Why should a prompt include clear instructions?', answers: ['understand', 'desired response', 'accurate', 'task'], hint: 'Consider how instructions guide the AI toward the intended task and result.', explanation: 'Clear instructions guide the AI toward the intended task and reduce the chance of an irrelevant response.', correctAnswer: 'To help the AI understand the task and produce the desired response' },
+  { text: 'Which prompt demonstrates strong prompt-engineering practices?', answers: ['clear', 'specific', 'context', 'format', 'details'], hint: 'Think about how adding clear details helps the AI understand your expected result.', explanation: 'This prompt gives the AI a clear role, specific task, and desired output, helping it produce a more relevant and useful response.', correctAnswer: 'Act as a beginner-friendly tutor. Explain SQL JOINs with one simple example, then give me three practice questions.' },
 ]
 
+const createInitialResults = () => questions.map(() => ({ answer: '', attempts: 0, status: 'idle', submitted: '' }))
+
 function ConversationQuiz() {
-  const [results, setResults] = useState(() => questions.map(() => ({ answer: '', attempts: 0, status: 'idle', submitted: '' })))
+  const [results, setResults] = useState(createInitialResults)
+  const quizCompleted = results.every((result) => result.status === 'correct' || result.attempts >= 3)
 
   const changeAnswer = (index, answer) => {
     setResults((items) => items.map((item, i) => i === index ? { ...item, answer } : item))
@@ -35,41 +37,21 @@ function ConversationQuiz() {
     } : item))
   }
 
+  const generateAnotherQuiz = () => {
+    setResults(createInitialResults())
+  }
+
   return (
     <div className="quiz-view">
       <h1>Quiz</h1>
-      <div className="quiz-intro">
-        <img className="quiz-mentor-avatar" src={assistantProfile} alt="Mentora assistant" />
-        <div><strong>Mentora</strong><p>Great! Let's check your understanding.</p></div>
-      </div>
+      <QuizIntro />
       <div className="quiz-question-list">
         {questions.map((question, index) => (
-          <QuizQuestion key={question.text} question={question} index={index} result={results[index]} onChange={changeAnswer} onSubmit={submitAnswer} />
+          <QuizCard key={question.text} question={question} index={index} totalQuestions={questions.length} result={results[index]} onChange={changeAnswer} onSubmit={submitAnswer} />
         ))}
       </div>
+      {quizCompleted && <GenerateQuizButton onClick={generateAnotherQuiz} />}
     </div>
-  )
-}
-
-function QuizQuestion({ question, index, result, onChange, onSubmit }) {
-  const finished = result.status === 'correct' || result.attempts >= 3
-  return (
-    <article className={`quiz-card quiz-card-${result.status}`}>
-      <span className="quiz-number">Question {index + 1} of {questions.length}</span>
-      <p>{question.text}</p>
-      {result.status !== 'correct' && (
-        <form className="quiz-answer-form" onSubmit={(event) => onSubmit(event, index)}>
-          <input value={result.answer} onChange={(event) => onChange(index, event.target.value)} placeholder={result.attempts ? 'Input your answer again and submit' : 'Input your answer and submit'} aria-label={`Answer question ${index + 1}`} disabled={finished} />
-          <button type="submit" aria-label={`Submit answer ${index + 1}`} disabled={!result.answer.trim() || finished}><ArrowForwardRoundedIcon /></button>
-        </form>
-      )}
-      {result.status === 'correct' && (
-        <div className="quiz-feedback quiz-feedback-correct" role="status"><span className="quiz-feedback-icon"><CheckRoundedIcon /></span><div><strong>Correct!</strong><p>Your answer: {result.submitted}</p></div></div>
-      )}
-      {result.status === 'incorrect' && (
-        <div className="quiz-feedback quiz-feedback-incorrect" role="status"><span className="quiz-feedback-icon"><CloseRoundedIcon /></span><div><strong>{finished ? 'No attempts remaining' : 'Incorrect!'}</strong><h3>Hint</h3><p>{question.hint}</p><span className="quiz-attempt">Attempt {result.attempts} of 3</span></div></div>
-      )}
-    </article>
   )
 }
 

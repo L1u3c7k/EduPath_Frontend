@@ -3,7 +3,7 @@ import AssistantChat from './AssistantChat'
 import InitialChat from './InitialChat'
 import UserChat from './UserChat'
 
-function ConversationChat({ messages, prompt, onPromptChange, onSubmit }) {
+function ConversationChat({ messages, prompt, onPromptChange, onSubmit, onUpdateMessage }) {
   if (!messages.length) {
     return (
       <InitialChat
@@ -20,7 +20,11 @@ function ConversationChat({ messages, prompt, onPromptChange, onSubmit }) {
         {messages.map((message, index) => {
           const ChatMessage = message.role === 'assistant' ? AssistantChat : UserChat
 
-          return <ChatMessage key={`${message.role}-${index}`} text={message.text} />
+          return message.role === 'user' ? (
+            <UserChat key={`${message.role}-${index}`} text={message.text} onUpdate={(text) => onUpdateMessage(index, text)} />
+          ) : (
+            <ChatMessage key={`${message.role}-${index}`} text={message.text} />
+          )
         })}
       </div>
       <form className="prompt-form" onSubmit={onSubmit}>

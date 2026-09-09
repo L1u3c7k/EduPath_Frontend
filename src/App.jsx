@@ -22,7 +22,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/auth/signup" replace />} />
         <Route path="/auth/:mode" element={<AuthPage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={<Navigate to="/dashboard/chat" replace />} />
+        <Route path="/dashboard/:view" element={<Dashboard />} />
 
         {/* Keep the original URLs working. */}
         <Route path="/signup" element={<Navigate to="/auth/signup" replace />} />

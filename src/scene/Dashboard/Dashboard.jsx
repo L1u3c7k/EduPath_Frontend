@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded'
 import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
@@ -9,6 +9,7 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
 import mentoraOwlLogo from '../../assets/mentora-owl-logo.png'
 import ConversationChat from '../../components/dashboard/ConversationChat'
+import ConversationQuiz from '../../components/dashboard/ConversationQuiz'
 import ResourcesPanel from '../../components/dashboard/ResourcesPanel'
 import { NewChatIcon, SidebarIcon } from '../../components/dashboard/DashboardIcons'
 import { Settings } from '../Settings'
@@ -19,13 +20,17 @@ const initialMessages = [
   { role: 'assistant', text: `Based on the provided context, prompt engineering is an emerging discipline focused on designing, refining, and optimizing inputs (prompts) for large language models (LLMs) to achieve desired outputs.\n\nIt is described as the art and science of communicating effectively with AI, transforming abstract goals into concrete instructions that an AI can execute. At its core, it involves understanding how LLMs process information and respond to various types of input.\n\nPrompt engineering goes beyond simply asking a question; it requires:\n– Structuring the question effectively\n– Providing context\n– Specifying desired formats\n– Guiding the AI’s thought process to produce accurate, relevant, and high-quality results\n\nThe cornerstones of practical prompt engineering are clarity, specificity, and context, which work together to ensure the AI understands the user’s intent without ambiguity.\n\nThe field is dynamic and constantly evolving with new models and techniques, making continuous learning essential for practitioners.` },
 ]
 
+const QUIZ_CHAT_THRESHOLD = 5
+
 function Dashboard() {
   const navigate = useNavigate()
+  const { view } = useParams()
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 720)
   const [resourcesOpen, setResourcesOpen] = useState(false)
   const [prompt, setPrompt] = useState('')
   const [search, setSearch] = useState('')
   const [messages, setMessages] = useState([])
+  const [chatUsageCount, setChatUsageCount] = useState(0)
   const [chats, setChats] = useState([])
   const [expandedChats, setExpandedChats] = useState([])
   const [openMenu, setOpenMenu] = useState(null)
@@ -37,6 +42,7 @@ function Dashboard() {
   const menuRef = useRef(null)
   const profileMenuRef = useRef(null)
   const visibleChats = useMemo(() => chats.filter((chat) => chat.toLowerCase().includes(search.toLowerCase())), [chats, search])
+  const quizUnlocked = chatUsageCount >= QUIZ_CHAT_THRESHOLD
 
   useEffect(() => {
     const closeMenu = (event) => {
@@ -62,6 +68,9 @@ function Dashboard() {
     return () => mobileQuery.removeEventListener('change', handleViewportChange)
   }, [])
 
+  if (view !== 'chat' && view !== 'quiz') return <Navigate to="/dashboard/chat" replace />
+  if (view === 'quiz' && !quizUnlocked) return <Navigate to="/dashboard/chat" replace />
+
   const submitPrompt = (event) => {
     event.preventDefault()
     const text = prompt.trim()
@@ -73,17 +82,33 @@ function Dashboard() {
       setExpandedChats((current) => current.includes(chatName) ? current : [...current, chatName])
     }
     setMessages((current) => isPromptEngineering && !current.length ? initialMessages : [...current, { role: 'user', text }])
+    setChatUsageCount((count) => count + 1)
     setPrompt('')
   }
 
+  const updateMessage = (index, text) => {
+    setMessages((current) => current.map((message, messageIndex) => (
+      messageIndex === index && message.role === 'user' ? { ...message, text } : message
+    )))
+  }
+
   const startNewChat = () => {
+    navigate('/dashboard/chat')
     setMessages([])
+    setChatUsageCount(0)
     setPrompt('')
     if (window.matchMedia('(max-width: 720px)').matches) setSidebarOpen(false)
   }
 
   const openChat = (chat) => {
+    navigate('/dashboard/chat')
     setMessages(chat === 'Prompt Engineering' ? initialMessages : [{ role: 'user', text: chat }])
+    setChatUsageCount(1)
+    if (window.matchMedia('(max-width: 720px)').matches) setSidebarOpen(false)
+  }
+
+  const openQuiz = () => {
+    navigate('/dashboard/quiz')
     if (window.matchMedia('(max-width: 720px)').matches) setSidebarOpen(false)
   }
 
@@ -111,6 +136,7 @@ function Dashboard() {
     setChats((current) => current.filter((item) => item !== chat))
     setExpandedChats((current) => current.filter((item) => item !== chat))
     setMessages([])
+    setChatUsageCount(0)
     setOpenMenu(null)
   }
 
@@ -168,8 +194,10 @@ function Dashboard() {
               )}
               {expandedChats.includes(chat) && (
                 <div className="recent-children">
-                  <button className="recent-child" type="button" onClick={() => openChat(chat)}>Chat</button>
-                  <button className="recent-child" type="button">Quiz</button>
+                  <button className={`recent-child ${view === 'chat' ? 'active' : ''}`} type="button" onClick={() => openChat(chat)}>Chat</button>
+                  {quizUnlocked && (
+                    <button className={`recent-child ${view === 'quiz' ? 'active' : ''}`} type="button" onClick={openQuiz}>Quiz</button>
+                  )}
                 </div>
               )}
             </div>
@@ -225,12 +253,17 @@ function Dashboard() {
           </button>
         )}
         <button className="resources-mobile-button" type="button" onClick={() => setResourcesOpen(true)}>Resources</button>
-        <ConversationChat
-          messages={messages}
-          prompt={prompt}
-          onPromptChange={(event) => setPrompt(event.target.value)}
-          onSubmit={submitPrompt}
-        />
+        {view === 'quiz' ? (
+          <ConversationQuiz />
+        ) : (
+          <ConversationChat
+            messages={messages}
+            prompt={prompt}
+            onPromptChange={(event) => setPrompt(event.target.value)}
+            onSubmit={submitPrompt}
+            onUpdateMessage={updateMessage}
+          />
+        )}
       </section>
 
       <ResourcesPanel isOpen={resourcesOpen} hasMessages={messages.length > 0} onClose={() => setResourcesOpen(false)} />

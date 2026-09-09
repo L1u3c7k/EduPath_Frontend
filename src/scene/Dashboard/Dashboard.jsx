@@ -30,6 +30,7 @@ function Dashboard() {
   const [prompt, setPrompt] = useState('')
   const [search, setSearch] = useState('')
   const [messages, setMessages] = useState([])
+  const [activeChat, setActiveChat] = useState(null)
   const [chatUsageCount, setChatUsageCount] = useState(0)
   const [chats, setChats] = useState([])
   const [expandedChats, setExpandedChats] = useState([])
@@ -80,6 +81,7 @@ function Dashboard() {
       const chatName = isPromptEngineering ? 'Prompt Engineering' : (text.length > 32 ? `${text.slice(0, 32)}...` : text)
       setChats((current) => current.includes(chatName) ? current : [chatName, ...current])
       setExpandedChats((current) => current.includes(chatName) ? current : [...current, chatName])
+      setActiveChat(chatName)
     }
     setMessages((current) => isPromptEngineering && !current.length ? initialMessages : [...current, { role: 'user', text }])
     setChatUsageCount((count) => count + 1)
@@ -95,6 +97,7 @@ function Dashboard() {
   const startNewChat = () => {
     navigate('/dashboard/chat')
     setMessages([])
+    setActiveChat(null)
     setChatUsageCount(0)
     setPrompt('')
     if (window.matchMedia('(max-width: 720px)').matches) setSidebarOpen(false)
@@ -102,8 +105,11 @@ function Dashboard() {
 
   const openChat = (chat) => {
     navigate('/dashboard/chat')
-    setMessages(chat === 'Prompt Engineering' ? initialMessages : [{ role: 'user', text: chat }])
-    setChatUsageCount(1)
+    if (chat !== activeChat) {
+      setMessages(chat === 'Prompt Engineering' ? initialMessages : [{ role: 'user', text: chat }])
+      setChatUsageCount(1)
+      setActiveChat(chat)
+    }
     if (window.matchMedia('(max-width: 720px)').matches) setSidebarOpen(false)
   }
 
@@ -128,6 +134,7 @@ function Dashboard() {
     if (name) {
       setChats((current) => current.map((item) => item === chat ? name : item))
       setExpandedChats((current) => current.map((item) => item === chat ? name : item))
+      setActiveChat((current) => current === chat ? name : current)
     }
     setEditingChat(null)
   }
@@ -135,8 +142,11 @@ function Dashboard() {
   const deleteChat = (chat) => {
     setChats((current) => current.filter((item) => item !== chat))
     setExpandedChats((current) => current.filter((item) => item !== chat))
-    setMessages([])
-    setChatUsageCount(0)
+    if (chat === activeChat) {
+      setMessages([])
+      setChatUsageCount(0)
+      setActiveChat(null)
+    }
     setOpenMenu(null)
   }
 

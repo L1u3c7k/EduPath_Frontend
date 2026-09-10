@@ -115,6 +115,12 @@
   right: 17px;
 }
 
+.edit-profile-back {
+  position: absolute;
+  top: 15px;
+  left: 17px;
+}
+
 .edit-profile-avatar-wrap {
   position: relative;
   width: 94px;
@@ -286,6 +292,28 @@
   height: 22px;
 }
 
+.save-password-button {
+  min-height: 44px;
+  margin-top: 6px;
+  padding: 9px 24px;
+  color: #fff;
+  background: #30485e;
+  border: 0;
+  border-radius: 17px;
+  box-shadow: 0 4px 8px rgb(34 51 68 / 24%);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+
+.save-password-button:hover,
+.save-password-button:focus-visible {
+  background: #41627f;
+  box-shadow: 0 6px 10px rgb(34 51 68 / 27%);
+  transform: translateY(-1px);
+}
+
 @media (max-width: 480px) {
   .settings-dialog {
     padding: 25px 25px 30px;
@@ -296,6 +324,10 @@
   .settings-actions button {
     transition: none;
     animation: none;
+  }
+
+  .save-password-button {
+    transition: none;
   }
 
   .settings-dialog {

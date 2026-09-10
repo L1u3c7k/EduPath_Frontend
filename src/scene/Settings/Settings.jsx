@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
+import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined'
@@ -59,6 +60,7 @@ function Settings({ isOpen, onClose, username, onUsernameChange }) {
 
       {view === 'profile' && (
         <section className="settings-dialog edit-profile-dialog" role="dialog" aria-modal="true" aria-label="Edit profile" onPointerDown={(event) => event.stopPropagation()}>
+          <button className="settings-close edit-profile-back" type="button" aria-label="Back to settings" onClick={() => setView('menu')}><ArrowBackRoundedIcon /></button>
           <button className="settings-close edit-profile-close" type="button" aria-label="Close edit profile" onClick={closeSettings}><CloseRoundedIcon /></button>
           <div className="edit-profile-avatar-wrap">
             <span className="edit-profile-avatar" aria-hidden="true">K</span>
@@ -71,11 +73,13 @@ function Settings({ isOpen, onClose, username, onUsernameChange }) {
 
       {view === 'password' && (
         <section className="settings-dialog change-password-dialog" role="dialog" aria-modal="true" aria-label="Change password" onPointerDown={(event) => event.stopPropagation()}>
+          <button className="settings-close edit-profile-back" type="button" aria-label="Back to settings" onClick={() => setView('menu')}><ArrowBackRoundedIcon /></button>
           <button className="settings-close edit-profile-close" type="button" aria-label="Close change password" onClick={closeSettings}><CloseRoundedIcon /></button>
           <form className="change-password-form" onSubmit={(event) => event.preventDefault()}>
             <SettingsPasswordField id="current-password" label="Current Password" autoComplete="current-password" />
             <SettingsPasswordField id="new-password" label="New Password" autoComplete="new-password" />
             <SettingsPasswordField id="confirm-password" label="Confirm Password" autoComplete="new-password" />
+            <button className="save-password-button" type="submit">Save Password</button>
           </form>
         </section>
       )}

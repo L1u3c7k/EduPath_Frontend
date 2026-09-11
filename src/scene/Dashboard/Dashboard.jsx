@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useNavigate, useParams } from 'react-router-dom'
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded'
 import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded'
@@ -11,6 +12,7 @@ import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineR
 import QuizOutlinedIcon from '@mui/icons-material/QuizOutlined'
 import mentoraOwlLogo from '../../assets/mentora-owl-logo.png'
 import ConversationChat from '../../components/dashboard/ConversationChat'
+import ConversationQuiz from '../../components/dashboard/ConversationQuiz'
 import ResourcesPanel from '../../components/dashboard/ResourcesPanel'
 import { NewChatIcon, SidebarIcon } from '../../components/dashboard/DashboardIcons'
 import { Settings } from '../Settings'
@@ -31,6 +33,8 @@ function Dashboard() {
   const [search, setSearch] = useState('')
 
   const [messages, setMessages] = useState([])
+  const [activeChat, setActiveChat] = useState(null)
+  const [chatUsageCount, setChatUsageCount] = useState(0)
   const [chats, setChats] = useState([])
   const [expandedChats, setExpandedChats] = useState([])
 
@@ -244,7 +248,10 @@ function Dashboard() {
   }
 
   const startNewChat = () => {
+    navigate('/dashboard/chat')
     setMessages([])
+    setActiveChat(null)
+    setChatUsageCount(0)
     setPrompt('')
     setExpandedChats([])
     navigate('/app')
@@ -412,6 +419,10 @@ function Dashboard() {
                   <button className="recent-child" type="button" onClick={() => openQuiz(chat.id)}>
                      Quiz
                   </button>
+                  <button className={`recent-child ${view === 'chat' ? 'active' : ''}`} type="button" onClick={() => openChat(chat)}>Chat</button>
+                  {quizUnlocked && (
+                    <button className={`recent-child ${view === 'quiz' ? 'active' : ''}`} type="button" onClick={openQuiz}>Quiz</button>
+                  )}
                 </div>
               )}
             </div>

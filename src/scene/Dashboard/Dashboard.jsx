@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded'
 import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
@@ -7,88 +7,161 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
+import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded'
+import QuizOutlinedIcon from '@mui/icons-material/QuizOutlined'
 import mentoraOwlLogo from '../../assets/mentora-owl-logo.png'
 import ConversationChat from '../../components/dashboard/ConversationChat'
 import ResourcesPanel from '../../components/dashboard/ResourcesPanel'
 import { NewChatIcon, SidebarIcon } from '../../components/dashboard/DashboardIcons'
 import { Settings } from '../Settings'
+import {fetchGetChatSessions,fetchGetChatHistoryApi,updateChatTitleApi,deleteChatApi,fetchInitializeChatApi,fetchSendMessageApi,
+} from '../../api/chatApi'
 import './Dashboard.css'
-import { fetchGetChatSessions } from '../../api/chatApi'
-
-function SidebarIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="3" y="3" width="18" height="18" rx="2.5" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M9 3.5v17" stroke="currentColor" strokeWidth="1.8" />
-    </svg>
-  )
-}
-
-function NewChatIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M11 4H5.75A1.75 1.75 0 0 0 4 5.75v12.5C4 19.22 4.78 20 5.75 20h12.5A1.75 1.75 0 0 0 20 18.25V13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="m17.25 3.75 3 3L11.5 15.5H8.5v-3l8.75-8.75Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-const initialMessages = [
-  { role: 'user', text: 'What is prompt engineering?' },
-  { role: 'assistant', text: `Based on the provided context, prompt engineering is an emerging discipline focused on designing, refining, and optimizing inputs (prompts) for large language models (LLMs) to achieve desired outputs.\n\nIt is described as the art and science of communicating effectively with AI, transforming abstract goals into concrete instructions that an AI can execute. At its core, it involves understanding how LLMs process information and respond to various types of input.\n\nPrompt engineering goes beyond simply asking a question; it requires:\n– Structuring the question effectively\n– Providing context\n– Specifying desired formats\n– Guiding the AI’s thought process to produce accurate, relevant, and high-quality results\n\nThe cornerstones of practical prompt engineering are clarity, specificity, and context, which work together to ensure the AI understands the user’s intent without ambiguity.\n\nThe field is dynamic and constantly evolving with new models and techniques, making continuous learning essential for practitioners.` },
-]
+import { useAuth } from '../../context/AuthContext'
+import { getUser } from '../../api/userApi'
 
 function Dashboard() {
   const navigate = useNavigate()
+  const { logout, user } = useAuth()
+  const { chatId: activeChatId } = useParams()
+
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 720)
   const [resourcesOpen, setResourcesOpen] = useState(false)
   const [prompt, setPrompt] = useState('')
   const [search, setSearch] = useState('')
+
   const [messages, setMessages] = useState([])
-  const [chats, setChats] = useState([])//Store chat titles
+  const [chats, setChats] = useState([])
   const [expandedChats, setExpandedChats] = useState([])
+
   const [openMenu, setOpenMenu] = useState(null)
-  const [editingChat, setEditingChat] = useState(null)
+  const [editingChatId, setEditingChatId] = useState(null)
   const [editValue, setEditValue] = useState('')
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [username, setUsername] = useState('Kira')
+  const [username, setUsername] = useState(user?.name || 'Kira')
+  const [userInfo, setUserInfo] = useState(null)
+
   const menuRef = useRef(null)
+  const profileMenuRef = useRef(null)
+
   const visibleChats = useMemo(
-    () => chats.filter((chat) => typeof chat === 'string' && chat.toLowerCase().includes(search.toLowerCase())),
+    () =>
+      chats.filter(
+        (chat) =>
+          chat &&
+          typeof chat.title === 'string' &&
+          chat.title.toLowerCase().includes(search.toLowerCase())
+      ),
     [chats, search]
   )
+
   useEffect(() => {
-    let isMounted = true;
+  let isMounted = true
 
-    const loadChatSessions = async () => {
-      try {
-        const data = await fetchGetChatSessions();
-        if (!isMounted || !data) return;
-
-        // Map backend response into an array of string titles
-        // Handles both array of objects [{ title: "..." }] or array of strings ["..."]
-        const sessionTitles = Array.isArray(data)
-          ? data.map((item) => (typeof item === 'object' ? item.title || item.name || 'Untitled Chat' : item))
-          : [];
-
-        setChats(sessionTitles);
-      } catch (error) {
-        console.error('Failed to load chat sessions:', error);
+  const fetchUserProfile = async () => {
+    try {
+      const data = await getUser()
+      if (isMounted && data) {
+        setUserInfo(data)
+        const fetchedName =  data.name
+        if (fetchedName) {
+          setUsername(fetchedName)
+        }
       }
-    };
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error)
+    }
+  }
 
-    loadChatSessions();
+  fetchUserProfile()
+
+  return () => {
+    isMounted = false
+  }
+}, [])
+  const handleLogout = async () => {
+    setProfileMenuOpen(false)
+    await logout()
+  }
+
+  // Fetch recent chat sessions list
+  const loadChatSessions = async () => {
+    try {
+      const data = await fetchGetChatSessions()
+      if (!data) return
+
+      const sessionObjects = Array.isArray(data)
+        ? data.map((item) => ({
+            id: item.id,
+            title: item.title || item.name || 'Untitled Chat',
+          }))
+        : []
+
+      setChats(sessionObjects)
+    } catch (error) {
+      console.error('Failed to load chat sessions:', error)
+    }
+  }
+
+  // 1. Fetch recent chat sessions list on mount
+  useEffect(() => {
+    let isMounted = true
+
+    const initSessions = async () => {
+      if (isMounted) await loadChatSessions()
+    }
+
+    initSessions()
 
     return () => {
-      isMounted = false;
-    };
-  }, []);
+      isMounted = false
+    }
+  }, [])
 
+  // 2. Fetch active chat message history directly when activeChatId changes in URL
+  useEffect(() => {
+    if (!activeChatId) {
+      setMessages([])
+      setPrompt('')
+      return
+    }
+
+    let isMounted = true
+    const loadChatHistory = async () => {
+      try {
+        const data = await fetchGetChatHistoryApi(activeChatId)
+        if (!isMounted || !data) return
+
+        const rawMessages = Array.isArray(data) ? data : data.messages || []
+        setMessages(rawMessages)
+      } catch (error) {
+        console.error('Failed to load chat history:', error)
+      }
+    }
+
+    loadChatHistory()
+
+    return () => {
+      isMounted = false
+    }
+  }, [activeChatId])
+
+  // Context menu click backdrop handler
   useEffect(() => {
     const closeMenu = (event) => {
-      if (event.key === 'Escape' || (event.type === 'pointerdown' && !menuRef.current?.contains(event.target))) setOpenMenu(null)
-      if (event.key === 'Escape' || (event.type === 'pointerdown' && !profileMenuRef.current?.contains(event.target))) setProfileMenuOpen(false)
+      if (
+        event.key === 'Escape' ||
+        (event.type === 'pointerdown' && !menuRef.current?.contains(event.target))
+      ) {
+        setOpenMenu(null)
+      }
+      if (
+        event.key === 'Escape' ||
+        (event.type === 'pointerdown' && !profileMenuRef.current?.contains(event.target))
+      ) {
+        setProfileMenuOpen(false)
+      }
     }
     document.addEventListener('pointerdown', closeMenu)
     document.addEventListener('keydown', closeMenu)
@@ -98,6 +171,7 @@ function Dashboard() {
     }
   }, [])
 
+  // Responsive sidebar toggle
   useEffect(() => {
     const mobileQuery = window.matchMedia('(max-width: 720px)')
     const handleViewportChange = (event) => {
@@ -109,56 +183,135 @@ function Dashboard() {
     return () => mobileQuery.removeEventListener('change', handleViewportChange)
   }, [])
 
-  const submitPrompt = (event) => {
+  
+  // Handle submitting prompts for both new and existing chats
+  const submitPrompt = async (event) => {
     event.preventDefault()
     const text = prompt.trim()
     if (!text) return
-    const isPromptEngineering = /prompt engineering/i.test(text)
-    if (!messages.length) {
-      const chatName = isPromptEngineering ? 'Prompt Engineering' : (text.length > 32 ? `${text.slice(0, 32)}...` : text)
-      setChats((current) => current.includes(chatName) ? current : [chatName, ...current])
-      setExpandedChats((current) => current.includes(chatName) ? current : [...current, chatName])
-    }
-    setMessages((current) => isPromptEngineering && !current.length ? initialMessages : [...current, { role: 'user', text }])
+
+    // Add user message to UI immediately
+    setMessages((current) => [...current, { role: 'user', content: text }])
     setPrompt('')
+
+    try {
+      if (!activeChatId) {
+        // 1. INITIALIZE NEW CHAT
+        const data = await fetchInitializeChatApi(text)
+
+        const newChatId = data.id || data.chat_id || data.chatId
+        const assistantReply = data.response || data.message || data.reply
+
+        if (assistantReply) {
+          setMessages((current) => [
+            ...current,
+            { role: 'assistant', content: assistantReply },
+          ])
+        }
+
+        // Refresh recent chats list in sidebar
+        await loadChatSessions()
+
+        // Navigate to the newly created chat session
+        if (newChatId) {
+          setExpandedChats([newChatId])
+          navigate(`/app/${newChatId}`)
+        }
+      } else {
+        // 2. SEND MESSAGE TO EXISTING CHAT
+        const data = await fetchSendMessageApi(activeChatId, text)
+
+        const assistantReply =
+          data.response || data.message || data.reply || data.content
+
+        if (assistantReply) {
+          setMessages((current) => [
+            ...current,
+            { role: 'assistant', content: assistantReply },
+          ])
+        }
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error)
+      setMessages((current) => [
+        ...current,
+        {
+          role: 'assistant',
+          content: 'Sorry, something went wrong. Please try again.',
+        },
+      ])
+    }
   }
 
   const startNewChat = () => {
     setMessages([])
     setPrompt('')
+    setExpandedChats([])
+    navigate('/app')
     if (window.matchMedia('(max-width: 720px)').matches) setSidebarOpen(false)
   }
 
-  const openChat = (chat) => {
-    setMessages(chat === 'Prompt Engineering' ? initialMessages : [{ role: 'user', text: chat }])
+  // Select chat from Recent list
+  const openChat = (chatId) => {
+    navigate(`/app/${chatId}`)
+    setExpandedChats([chatId])
     if (window.matchMedia('(max-width: 720px)').matches) setSidebarOpen(false)
   }
 
-  const toggleChat = (chat) => {
-    setExpandedChats((current) => current.includes(chat) ? current.filter((item) => item !== chat) : [...current, chat])
+  const openQuiz = (chatId) => {
+    navigate(`/app/quiz/${chatId}`)
+    if (window.matchMedia('(max-width: 720px)').matches) setSidebarOpen(false)
   }
 
+  // Accordion toggle: opening one group closes all others
+  const toggleChat = (chatId) => {
+    setExpandedChats((current) =>
+      current.includes(chatId) ? [] : [chatId]
+    )
+  }
+
+  // Start editing mode for title
   const beginEditing = (chat) => {
-    setEditingChat(chat)
-    setEditValue(chat)
+    setEditingChatId(chat.id)
+    setEditValue(chat.title)
     setOpenMenu(null)
   }
 
-  const saveChatName = (event, chat) => {
+  // 5. UPDATE CHAT TITLE
+  const saveChatName = async (event, chatId) => {
     event.preventDefault()
-    const name = editValue.trim()
-    if (name) {
-      setChats((current) => current.map((item) => item === chat ? name : item))
-      setExpandedChats((current) => current.map((item) => item === chat ? name : item))
+    const newTitle = editValue.trim()
+    if (newTitle) {
+      try {
+        await updateChatTitleApi(chatId, newTitle)
+        setChats((current) =>
+          current.map((item) => (item.id === chatId ? { ...item, title: newTitle } : item))
+        )
+      } catch (error) {
+        console.error('Failed to update chat title:', error)
+      }
     }
-    setEditingChat(null)
+    setEditingChatId(null)
   }
 
-  const deleteChat = (chat) => {
-    setChats((current) => current.filter((item) => item !== chat))
-    setExpandedChats((current) => current.filter((item) => item !== chat))
-    setMessages([])
-    setOpenMenu(null)
+  // 6. DELETE CHAT SESSION
+  const deleteChat = async (chatId) => {
+    try {
+      await deleteChatApi(chatId)
+
+      // Update sidebar state
+      setChats((current) => current.filter((item) => item.id !== chatId))
+      setExpandedChats((current) => current.filter((id) => id !== chatId))
+
+      // If active chat was deleted, reset back to new chat screen
+      if (String(activeChatId) === String(chatId)) {
+        startNewChat()
+      }
+    } catch (error) {
+      console.error('Failed to delete chat session:', error)
+    } finally {
+      setOpenMenu(null)
+    }
   }
 
   return (
@@ -186,42 +339,85 @@ function Dashboard() {
         </button>
         <label className="chat-search">
           <SearchRoundedIcon />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search chats" aria-label="Search chats" />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search chats"
+            aria-label="Search chats"
+          />
         </label>
         <section className="recent-chats" aria-labelledby="recent-title">
           <h2 id="recent-title">Recent</h2>
           {visibleChats.map((chat) => (
-            <div className="recent-group" key={chat} ref={openMenu === chat ? menuRef : null}>
+            <div
+              className={`recent-group ${activeChatId === String(chat.id) ? 'active' : ''}`}
+              key={chat.id}
+              ref={openMenu === chat.id ? menuRef : null}
+            >
               <div className="recent-group-title">
-                {editingChat === chat ? (
-                  <form className="chat-name-form" onSubmit={(event) => saveChatName(event, chat)}>
-                    <input autoFocus value={editValue} onChange={(event) => setEditValue(event.target.value)} onBlur={(event) => saveChatName(event, chat)} aria-label="Chat name" />
+                {editingChatId === chat.id ? (
+                  <form className="chat-name-form" onSubmit={(event) => saveChatName(event, chat.id)}>
+                    <input
+                      autoFocus
+                      value={editValue}
+                      onChange={(event) => setEditValue(event.target.value)}
+                      onBlur={(event) => saveChatName(event, chat.id)}
+                      aria-label="Chat name"
+                    />
                   </form>
                 ) : (
-                  <button type="button" onClick={() => openChat(chat)}>{chat}</button>
+                  <button type="button" onClick={() => openChat(chat.id)}>
+                    {chat.title}
+                  </button>
                 )}
-                <button className="chat-expand-button" type="button" aria-label={`${expandedChats.includes(chat) ? 'Collapse' : 'Expand'} ${chat}`} aria-expanded={expandedChats.includes(chat)} onClick={() => toggleChat(chat)}>
+
+                <button
+                  className="chat-expand-button"
+                  type="button"
+                  aria-label={`${expandedChats.includes(chat.id) ? 'Collapse' : 'Expand'} ${chat.title}`}
+                  aria-expanded={expandedChats.includes(chat.id)}
+                  onClick={() => toggleChat(chat.id)}
+                >
                   <KeyboardArrowDownRoundedIcon />
                 </button>
-                <button className="chat-options-button" type="button" aria-label={`Options for ${chat}`} aria-haspopup="menu" aria-expanded={openMenu === chat} onClick={() => setOpenMenu((current) => current === chat ? null : chat)}>
+
+                <button
+                  className="chat-options-button"
+                  type="button"
+                  aria-label={`Options for ${chat.title}`}
+                  aria-haspopup="menu"
+                  aria-expanded={openMenu === chat.id}
+                  onClick={() => setOpenMenu((current) => (current === chat.id ? null : chat.id))}
+                >
                   <MoreHorizRoundedIcon />
                 </button>
               </div>
-              {openMenu === chat && (
+
+              {openMenu === chat.id && (
                 <div className="chat-options-menu" role="menu">
-                  <button type="button" role="menuitem" onClick={() => beginEditing(chat)}><EditOutlinedIcon />Edit</button>
-                  <button type="button" role="menuitem" onClick={() => deleteChat(chat)}><DeleteOutlineRoundedIcon />Delete</button>
+                  <button type="button" role="menuitem" onClick={() => beginEditing(chat)}>
+                    <EditOutlinedIcon /> Edit
+                  </button>
+                  <button type="button" role="menuitem" onClick={() => deleteChat(chat.id)}>
+                    <DeleteOutlineRoundedIcon /> Delete
+                  </button>
                 </div>
               )}
-              {expandedChats.includes(chat) && (
+
+              {expandedChats.includes(chat.id) && (
                 <div className="recent-children">
-                  <button className="recent-child" type="button" onClick={() => openChat(chat)}>Chat</button>
-                  <button className="recent-child" type="button">Quiz</button>
+                  <button className="recent-child" type="button" onClick={() => openChat(chat.id)}>
+                    Chat
+                  </button>
+                  <button className="recent-child" type="button" onClick={() => openQuiz(chat.id)}>
+                     Quiz
+                  </button>
                 </div>
               )}
             </div>
           ))}
         </section>
+
         <div className="profile-menu-wrap" ref={profileMenuRef}>
           {profileMenuOpen && (
             <div className="profile-menu" role="menu" aria-label="Profile options">
@@ -236,14 +432,7 @@ function Dashboard() {
                 <SettingsOutlinedIcon />
                 <span>Settings</span>
               </button>
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  setProfileMenuOpen(false)
-                  navigate('/')
-                }}
-              >
+              <button type="button" role="menuitem" onClick={handleLogout}>
                 <LogoutRoundedIcon />
                 <span>Log out</span>
               </button>
@@ -256,22 +445,41 @@ function Dashboard() {
             aria-expanded={profileMenuOpen}
             onClick={() => setProfileMenuOpen((open) => !open)}
           >
-            <span className="profile-avatar" aria-hidden="true">K</span>
+            <span className="profile-avatar" aria-hidden="true">
+              {username.charAt(0).toUpperCase()}
+            </span>
             <span>{username}</span>
           </button>
         </div>
       </aside>
+
       {sidebarOpen && (
-        <button className="sidebar-backdrop" type="button" aria-label="Close sidebar" onClick={() => setSidebarOpen(false)} />
+        <button
+          className="sidebar-backdrop"
+          type="button"
+          aria-label="Close sidebar"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
       <section className="dashboard-main" aria-label="Chat with Mentora">
         {!sidebarOpen && (
-          <button className="dashboard-icon-button floating-menu" type="button" aria-label="Open sidebar" onClick={() => setSidebarOpen(true)}>
+          <button
+            className="dashboard-icon-button floating-menu"
+            type="button"
+            aria-label="Open sidebar"
+            onClick={() => setSidebarOpen(true)}
+          >
             <SidebarIcon />
           </button>
         )}
-        <button className="resources-mobile-button" type="button" onClick={() => setResourcesOpen(true)}>Resources</button>
+        <button
+          className="resources-mobile-button"
+          type="button"
+          onClick={() => setResourcesOpen(true)}
+        >
+          Resources
+        </button>
         <ConversationChat
           messages={messages}
           prompt={prompt}
@@ -280,9 +488,18 @@ function Dashboard() {
         />
       </section>
 
-      <ResourcesPanel isOpen={resourcesOpen} hasMessages={messages.length > 0} onClose={() => setResourcesOpen(false)} />
+      <ResourcesPanel
+        isOpen={resourcesOpen}
+        hasMessages={messages.length > 0}
+        onClose={() => setResourcesOpen(false)}
+      />
 
-      <Settings isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} username={username} onUsernameChange={setUsername} />
+      <Settings
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        username={username}
+        onUsernameChange={setUsername}
+      />
     </main>
   )
 }

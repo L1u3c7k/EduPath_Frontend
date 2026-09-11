@@ -57,6 +57,7 @@ function App() {
           {/* Protected Routes */}
           <Route element={<PrivateRoute />}>
             <Route path="/app" element={<Dashboard />} />
+            <Route path="/app/:chatId" element={<Dashboard />} />
           </Route>
 
           {/* Fallback Catch-All */}

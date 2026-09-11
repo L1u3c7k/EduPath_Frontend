@@ -1,38 +1,11 @@
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined'
-import { Link, useNavigate } from 'react-router-dom'
+
 import AuthBrandPanel from '../../components/auth/AuthBrandPanel'
 import PasswordField from '../../components/auth/PasswordField'
-import mentoraLogo from '../../assets/mentora-logo.png'
-
-function PasswordField({ id, label, autoComplete }) {
-  const [isVisible, setIsVisible] = useState(false)
-
-  return (
-    <div className="field-group">
-      <label htmlFor={id}>{label}</label>
-      <div className="input-wrap">
-        <LockOutlinedIcon aria-hidden="true" />
-        <input
-          id={id}
-          name={id}
-          type={isVisible ? 'text' : 'password'}
-          placeholder="Password"
-          autoComplete={autoComplete}
-          required
-        />
-        <button
-          className="visibility-button"
-          type="button"
-          aria-label={isVisible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
-          onClick={() => setIsVisible((visible) => !visible)}
-        >
-          {isVisible ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}
-        </button>
-      </div>
-    </div>
-  )
-}
+import { useAuth } from '../../context/AuthContext' // Ensure correct path to your AuthContext
 
 function SignUp() {
   const [formData, setFormData] = useState({
@@ -53,44 +26,44 @@ function SignUp() {
   }
 
   const handleSubmit = async (event) => {
-  event.preventDefault()
-  setError('')
+    event.preventDefault()
+    setError('')
 
-  if (formData.password !== formData.confirmPassword) {
-    setError('Passwords do not match.')
-    return
-  }
-
-  setLoading(true)
-
-  const payload = {
-    name: formData.name.trim(),
-    username: formData.name.trim(),
-    email: formData.email.trim(),
-    password: formData.password,
-  }
-
-  try {
-    // 1. Call signup from context
-    await signup(payload)
-    
-    // 2. Use replace: true so the route swap is clean without triggering extra listeners
-    navigate('/dashboard', { replace: true })
-  } catch (err) {
-    const backendDetail = err.response?.data?.detail
-
-    if (Array.isArray(backendDetail) && backendDetail.length > 0) {
-      const cleanMessage = backendDetail[0].msg.replace(/^Value error,\s*/, '')
-      setError(cleanMessage)
-    } else if (typeof backendDetail === 'string') {
-      setError(backendDetail)
-    } else {
-      setError(err.response?.data?.message || 'Failed to create account. Please try again.')
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match.')
+      return
     }
-  } finally {
-    setLoading(false)
+
+    setLoading(true)
+
+    const payload = {
+      name: formData.name.trim(),
+      username: formData.name.trim(),
+      email: formData.email.trim(),
+      password: formData.password,
+    }
+
+    try {
+      // 1. Call signup from context
+      await signup(payload)
+
+      // 2. Use replace: true so the route swap is clean
+      navigate('/app', { replace: true })
+    } catch (err) {
+      const backendDetail = err.response?.data?.detail
+
+      if (Array.isArray(backendDetail) && backendDetail.length > 0) {
+        const cleanMessage = backendDetail[0].msg.replace(/^Value error,\s*/, '')
+        setError(cleanMessage)
+      } else if (typeof backendDetail === 'string') {
+        setError(backendDetail)
+      } else {
+        setError(err.response?.data?.message || 'Failed to create account. Please try again.')
+      }
+    } finally {
+      setLoading(false)
+    }
   }
-}
 
   return (
     <main className="app-shell signup-page">

@@ -2,8 +2,8 @@ import axios from "axios";
 import { refreshAccessTokenApi } from "./authApi"; // Import your raw refresh function
 
 let getAccessToken = () => null;
-let syncAccessToken = () => {};
-let onUnauthorized = () => {};
+let syncAccessToken = () => { };
+let onUnauthorized = () => { };
 
 export const configureAuthHandlers = ({ getToken, setToken, onUnauthorized: handleUnauthorized }) => {
   getAccessToken = getToken;
@@ -32,11 +32,12 @@ const processQueue = (error, token = null) => {
   });
   failedQueue = [];
 };
-
-// Request Interceptor
+// api.js
 api.interceptors.request.use(
   (config) => {
-    const accessToken = getAccessToken();
+   
+    const accessToken = getAccessToken() 
+
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
@@ -50,15 +51,15 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const status = error.response?.status;
 
-    
     if (
-      error.response?.status === 401 &&
+      (status === 401 || status === 403) &&
       !originalRequest._retry &&
       !originalRequest.url.includes('/auth/refresh_token')
     ) {
       if (isRefreshing) {
-        
+
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
@@ -73,10 +74,10 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        
+
         const newAccessToken = await refreshAccessTokenApi();
-        
-        
+
+
         syncAccessToken(newAccessToken);
 
         // 2. Attach new token to the original failed request
@@ -89,7 +90,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        onUnauthorized(); 
+        onUnauthorized();
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

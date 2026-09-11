@@ -87,9 +87,18 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      // 1. Send call to backend to destroy the refresh token cookie
       await logoutApi()
+    } catch (error) {
+      // Log any network error, but continue resetting client state anyway
+      console.error('Logout error on server:', error)
     } finally {
+      // 2. Clear in-memory access token & user state
       applyToken(null, null)
+      tokenRef.current = null
+
+      // 3. Redirect user back to login page
+      navigate('/login', { replace: true })
     }
   }
 

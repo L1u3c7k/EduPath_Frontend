@@ -3,7 +3,7 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined'
 
-function PasswordField({ id, label, autoComplete }) {
+function PasswordField({ id, label, autoComplete, value, onChange }) {
   const [isVisible, setIsVisible] = useState(false)
 
   return (
@@ -11,7 +11,16 @@ function PasswordField({ id, label, autoComplete }) {
       <label htmlFor={id}>{label}</label>
       <div className="input-wrap">
         <LockOutlinedIcon aria-hidden="true" />
-        <input id={id} name={id} type={isVisible ? 'text' : 'password'} placeholder="Password" autoComplete={autoComplete} required />
+        <input 
+          id={id} 
+          name={id} 
+          type={isVisible ? 'text' : 'password'} 
+          placeholder="Password" 
+          autoComplete={autoComplete} 
+          value={value}
+          onChange={onChange}
+          required 
+        />
         <button
           className="visibility-button"
           type="button"

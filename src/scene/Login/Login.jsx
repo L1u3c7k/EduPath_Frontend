@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
@@ -26,7 +26,7 @@ function Login() {
 
     try {
       await login({ email, password })
-      navigate('/dashboard')
+      navigate('/app')
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to log in. Please check your credentials.')
     } finally {

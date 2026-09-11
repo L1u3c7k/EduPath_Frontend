@@ -184,6 +184,11 @@
   position: relative;
 }
 
+.recent-group.active .recent-group-title > button:first-of-type {
+  font-weight: 700;
+  color: #2b4a66;
+}
+
 .recent-group-title {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 24px 24px;
@@ -497,6 +502,17 @@
   color: #344d64;
   background: #eef0ff;
   border-radius: 0 39px 39px 39px;
+}
+
+.message-assistant.is-pending {
+  font-style: italic;
+  opacity: 0.78;
+}
+
+.chat-status-error {
+  margin: 0 8px 12px;
+  color: #b42318;
+  font-size: 0.875rem;
 }
 
 .conversation h1 {

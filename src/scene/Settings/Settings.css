@@ -106,7 +106,7 @@
 
 .edit-profile-dialog {
   position: relative;
-  padding: 36px 37px 29px;
+  padding: 29px 37px;
 }
 
 .edit-profile-close {
@@ -115,11 +115,37 @@
   right: 17px;
 }
 
+.edit-profile-back {
+  position: absolute;
+  top: 15px;
+  left: 17px;
+}
+
+.settings-subpage-title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.settings-subpage-heading {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 28px;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.settings-subpage-heading .edit-profile-back,
+.settings-subpage-heading .edit-profile-close {
+  position: static;
+}
+
 .edit-profile-avatar-wrap {
   position: relative;
   width: 94px;
   height: 94px;
-  margin: 0 auto 62px;
+  margin: 0 auto 42px;
 }
 
 .edit-profile-avatar {
@@ -169,8 +195,8 @@
 
 .profile-detail-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 28px;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: 16px;
   align-items: start;
   margin-bottom: 19px;
   font-size: 1rem;
@@ -186,34 +212,52 @@
 }
 
 .username-field {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  font-size: 1.0625rem;
-  font-weight: 600;
+  align-items: center;
 }
 
 .username-field input {
   width: 100%;
-  min-height: 42px;
-  padding: 8px 30px;
+  min-width: 0;
+  padding: 5px 0;
   color: #30485e;
-  background: #fff;
-  border: 1px solid rgb(47 72 96 / 40%);
-  border-radius: 17px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgb(47 72 96 / 40%);
   outline: 0;
   font: inherit;
-  font-weight: 400;
+  text-align: right;
 }
 
 .username-field input:focus {
   border-color: #527c9e;
-  box-shadow: 0 0 0 2px rgb(82 124 158 / 18%);
+}
+
+.confirm-profile-button {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 12px;
+  padding: 9px 24px;
+  color: #fff;
+  background: #30485e;
+  border: 0;
+  border-radius: 17px;
+  box-shadow: 0 4px 8px rgb(34 51 68 / 24%);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+
+.confirm-profile-button:hover,
+.confirm-profile-button:focus-visible {
+  background: #41627f;
+  box-shadow: 0 6px 10px rgb(34 51 68 / 27%);
+  transform: translateY(-1px);
 }
 
 .change-password-dialog {
   position: relative;
-  padding: 50px 46px 30px;
+  padding: 29px 46px 30px;
 }
 
 .change-password-form {
@@ -286,6 +330,28 @@
   height: 22px;
 }
 
+.save-password-button {
+  min-height: 44px;
+  margin-top: 6px;
+  padding: 9px 24px;
+  color: #fff;
+  background: #30485e;
+  border: 0;
+  border-radius: 17px;
+  box-shadow: 0 4px 8px rgb(34 51 68 / 24%);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+
+.save-password-button:hover,
+.save-password-button:focus-visible {
+  background: #41627f;
+  box-shadow: 0 6px 10px rgb(34 51 68 / 27%);
+  transform: translateY(-1px);
+}
+
 @media (max-width: 480px) {
   .settings-dialog {
     padding: 25px 25px 30px;
@@ -296,6 +362,14 @@
   .settings-actions button {
     transition: none;
     animation: none;
+  }
+
+  .save-password-button {
+    transition: none;
+  }
+
+  .confirm-profile-button {
+    transition: none;
   }
 
   .settings-dialog {

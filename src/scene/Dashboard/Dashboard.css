@@ -662,7 +662,7 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 17px;
+  gap: 8px;
   overflow-y: auto;
   padding: 0 3px 16px;
   scrollbar-width: none;
@@ -701,7 +701,6 @@
   display: flex;
   justify-content: flex-end;
   gap: 6px;
-  margin-top: 6px;
   opacity: 0;
   pointer-events: none;
   transform: translateY(-4px);
@@ -731,7 +730,7 @@
 .message-actions button:hover,
 .message-actions button:focus-visible { background: #eef0ff; }
 .message-actions button:focus-visible { outline: 2px solid #527c9e; outline-offset: 1px; }
-.message-actions svg { width: 19px; height: 19px; }
+.message-actions svg { width: 18px; height: 18px; }
 
 @media (hover: none) {
   .message-actions {

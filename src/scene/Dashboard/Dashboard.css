@@ -793,6 +793,9 @@
 
 .assistant-message-wrap .message-actions {
   justify-content: flex-start;
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
 }
 
 .message-actions button {

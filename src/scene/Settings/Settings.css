@@ -216,8 +216,9 @@
 }
 
 .username-field input {
-  width: 100%;
+  width: 80%;
   min-width: 0;
+  justify-self: end;
   padding: 5px 0;
   color: #30485e;
   background: transparent;

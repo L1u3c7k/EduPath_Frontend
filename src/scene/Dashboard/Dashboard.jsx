@@ -37,6 +37,8 @@ function Dashboard() {
   const [openMenu, setOpenMenu] = useState(null)
   const [editingChat, setEditingChat] = useState(null)
   const [editValue, setEditValue] = useState('')
+  const [chatToDelete, setChatToDelete] = useState(null)
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [username, setUsername] = useState('Kira')
@@ -57,6 +59,20 @@ function Dashboard() {
       document.removeEventListener('keydown', closeMenu)
     }
   }, [])
+
+  useEffect(() => {
+    if (!chatToDelete && !logoutDialogOpen) return undefined
+
+    const closeConfirmationDialog = (event) => {
+      if (event.key === 'Escape') {
+        setChatToDelete(null)
+        setLogoutDialogOpen(false)
+      }
+    }
+
+    document.addEventListener('keydown', closeConfirmationDialog)
+    return () => document.removeEventListener('keydown', closeConfirmationDialog)
+  }, [chatToDelete, logoutDialogOpen])
 
   useEffect(() => {
     const mobileQuery = window.matchMedia('(max-width: 720px)')
@@ -139,7 +155,14 @@ function Dashboard() {
     setEditingChat(null)
   }
 
-  const deleteChat = (chat) => {
+  const requestDeleteChat = (chat) => {
+    setOpenMenu(null)
+    setChatToDelete(chat)
+  }
+
+  const deleteChat = () => {
+    const chat = chatToDelete
+    if (!chat) return
     setChats((current) => current.filter((item) => item !== chat))
     setExpandedChats((current) => current.filter((item) => item !== chat))
     if (chat === activeChat) {
@@ -148,6 +171,7 @@ function Dashboard() {
       setActiveChat(null)
     }
     setOpenMenu(null)
+    setChatToDelete(null)
   }
 
   return (
@@ -199,7 +223,7 @@ function Dashboard() {
               {openMenu === chat && (
                 <div className="chat-options-menu" role="menu">
                   <button type="button" role="menuitem" onClick={() => beginEditing(chat)}><EditOutlinedIcon />Edit</button>
-                  <button type="button" role="menuitem" onClick={() => deleteChat(chat)}><DeleteOutlineRoundedIcon />Delete</button>
+                  <button type="button" role="menuitem" onClick={() => requestDeleteChat(chat)}><DeleteOutlineRoundedIcon />Delete</button>
                 </div>
               )}
               {expandedChats.includes(chat) && (
@@ -232,7 +256,7 @@ function Dashboard() {
                 role="menuitem"
                 onClick={() => {
                   setProfileMenuOpen(false)
-                  navigate('/')
+                  setLogoutDialogOpen(true)
                 }}
               >
                 <LogoutRoundedIcon />
@@ -279,6 +303,46 @@ function Dashboard() {
       <ResourcesPanel isOpen={resourcesOpen} hasMessages={messages.length > 0} onClose={() => setResourcesOpen(false)} />
 
       <Settings isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} username={username} onUsernameChange={setUsername} />
+
+      {chatToDelete && (
+        <div className="delete-chat-backdrop" role="presentation" onMouseDown={() => setChatToDelete(null)}>
+          <div
+            className="delete-chat-dialog"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-chat-title"
+            aria-describedby="delete-chat-description"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <h2 id="delete-chat-title">Delete chat?</h2>
+            <p id="delete-chat-description">Are you sure you want to delete this chat? This action cannot be undone.</p>
+            <div className="delete-chat-actions">
+              <button type="button" onClick={() => setChatToDelete(null)}>Cancel</button>
+              <button className="delete-chat-confirm" type="button" autoFocus onClick={deleteChat}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {logoutDialogOpen && (
+        <div className="delete-chat-backdrop" role="presentation" onMouseDown={() => setLogoutDialogOpen(false)}>
+          <div
+            className="delete-chat-dialog"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="logout-title"
+            aria-describedby="logout-description"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <h2 id="logout-title">Log out?</h2>
+            <p id="logout-description">Are you sure you want to log out?</p>
+            <div className="delete-chat-actions">
+              <button type="button" onClick={() => setLogoutDialogOpen(false)}>Cancel</button>
+              <button className="logout-confirm" type="button" autoFocus onClick={() => navigate('/')}>Log out</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

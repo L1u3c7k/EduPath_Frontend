@@ -445,6 +445,67 @@
   font-weight: 700;
 }
 
+.delete-chat-backdrop {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(26 40 52 / 45%);
+}
+
+.delete-chat-dialog {
+  width: min(410px, 100%);
+  padding: 28px;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 18px 50px rgb(25 39 52 / 28%);
+}
+
+.delete-chat-dialog h2 {
+  margin: 0 0 10px;
+  color: #263f56;
+  font-size: 1.4rem;
+}
+
+.delete-chat-dialog p {
+  margin: 0;
+  color: #53697c;
+  line-height: 1.5;
+}
+
+.delete-chat-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+.delete-chat-actions button {
+  min-width: 88px;
+  padding: 10px 18px;
+  color: #30485e;
+  background: #edf2f5;
+  border: 0;
+  border-radius: 10px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.delete-chat-actions .delete-chat-confirm {
+  color: #fff;
+  background: #b3261e;
+}
+
+.delete-chat-actions .logout-confirm {
+  color: #fff;
+  background: #304b65;
+}
+
+.delete-chat-actions button:hover { filter: brightness(.95); }
+.delete-chat-actions button:focus-visible { outline: 3px solid #88a8c4; outline-offset: 2px; }
+
 
 .dashboard-main {
   position: relative;

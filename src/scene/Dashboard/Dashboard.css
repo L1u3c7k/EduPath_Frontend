@@ -518,6 +518,7 @@
 
 .conversation {
   width: min(802px, 100%);
+  min-width: 0;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -719,12 +720,14 @@
 .generate-quiz-button:focus-visible { outline: 3px solid #88a8c4; outline-offset: 3px; }
 
 .message-list {
+  width: 100%;
   min-height: 0;
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 8px;
+  align-items: stretch;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 0 3px 16px;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -737,14 +740,15 @@
 }
 
 .message {
+  min-width: 0;
   font-size: clamp(0.9375rem, 1.25vw, 1.125rem);
   line-height: 1.42;
   white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 
 .message-user {
-  max-width: 72%;
-  align-self: flex-end;
+  width: 100%;
   padding: 13px 30px;
   color: #fff;
   background: #304b65;
@@ -752,11 +756,21 @@
 }
 
 .user-message-wrap {
+  width: fit-content;
   max-width: 72%;
   align-self: flex-end;
+  margin-inline-start: auto;
 }
 
 .user-message-wrap .message-user { max-width: 100%; }
+
+.assistant-message-wrap {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  align-self: stretch;
+  margin-inline-end: auto;
+}
 
 .message-actions {
   display: flex;
@@ -769,10 +783,16 @@
 }
 
 .user-message-wrap:hover .message-actions,
-.user-message-wrap:focus-within .message-actions {
+.user-message-wrap:focus-within .message-actions,
+.assistant-message-wrap:hover .message-actions,
+.assistant-message-wrap:focus-within .message-actions {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
+}
+
+.assistant-message-wrap .message-actions {
+  justify-content: flex-start;
 }
 
 .message-actions button {
@@ -804,6 +824,7 @@
 .message-editor {
   width: min(680px, 92%);
   align-self: flex-end;
+  margin-inline-start: auto;
 }
 
 .message-editor textarea {
@@ -847,7 +868,7 @@
 .message-editor-actions .message-update:disabled { color: #8d96a0; background: #e1e4e8; cursor: default; }
 
 .message-assistant {
-  align-self: stretch;
+  width: 100%;
   padding: 14px 21px 11px;
   color: #344d64;
   background: #eef0ff;
@@ -871,6 +892,8 @@
 }
 
 .prompt-form {
+  width: 100%;
+  flex: none;
   min-height: 49px;
   display: flex;
   align-items: center;
@@ -1096,7 +1119,7 @@
     font-size: 1.3125rem;
   }
 
-  .message-user {
+  .user-message-wrap {
     max-width: 85%;
   }
 
@@ -1155,20 +1178,33 @@
   }
 
   .dashboard-main {
+    width: 100%;
     height: 100dvh;
     padding: max(62px, calc(48px + env(safe-area-inset-top))) 15px max(14px, env(safe-area-inset-bottom));
+  }
+
+  .conversation {
+    max-width: 100%;
+  }
+
+  .message-list {
+    align-items: stretch;
+    padding-bottom: 10px;
   }
 
   .message {
     font-size: 0.875rem;
   }
 
-  .message-user {
+  .user-message-wrap {
     max-width: 88%;
+    margin-inline-start: auto;
+  }
+
+  .message-user {
     padding: 11px 18px;
   }
 
-  .user-message-wrap { max-width: 88%; }
   .message-editor { width: 96%; }
   .message-editor textarea { min-height: 130px; padding: 16px 18px; }
 
@@ -1204,17 +1240,22 @@
   }
 
   .message-list {
-    gap: 12px;
-    padding-right: 0;
-    padding-left: 0;
+    gap: 8px;
+    padding-inline: 0;
+  }
+
+  .user-message-wrap {
+    max-width: 92%;
+  }
+
+  .message-actions {
+    padding-inline: 2px;
   }
 
   .message-user {
-    max-width: 92%;
     border-radius: 22px 0 22px 22px;
   }
 
-  .user-message-wrap { max-width: 92%; }
   .message-editor { width: 100%; }
   .message-editor textarea { min-height: 110px; border-radius: 22px 0 22px 22px; }
 
@@ -1226,8 +1267,10 @@
 
   .prompt-form {
     min-height: 46px;
-    padding-left: 16px;
+    padding: 0 10px 0 16px;
   }
+
+  .prompt-form input { font-size: 0.9375rem; }
 
   .resources-mobile-button {
     right: 10px;
@@ -1276,9 +1319,12 @@
     font-size: 1.5rem;
   }
 
-  .message-user {
+  .user-message-wrap {
     max-width: 96%;
   }
+
+  .message-user { padding-right: 14px; padding-left: 14px; }
+  .message-assistant { padding-right: 12px; padding-left: 12px; }
 
   .quiz-mentor-avatar { width: 42px; height: 42px; }
   .quiz-answer-form input { font-size: .8rem; }

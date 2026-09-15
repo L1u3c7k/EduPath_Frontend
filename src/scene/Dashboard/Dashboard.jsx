@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
+
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded'
 import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
@@ -8,24 +8,34 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
-import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded'
-import QuizOutlinedIcon from '@mui/icons-material/QuizOutlined'
+
 import mentoraOwlLogo from '../../assets/mentora-owl-logo.png'
 import ConversationChat from '../../components/dashboard/ConversationChat'
-import ConversationQuiz from '../../components/dashboard/ConversationQuiz'
 import ResourcesPanel from '../../components/dashboard/ResourcesPanel'
+import ConversationQuiz from '../../components/dashboard/ConversationQuiz'
 import { NewChatIcon, SidebarIcon } from '../../components/dashboard/DashboardIcons'
 import { Settings } from '../Settings'
-import {fetchGetChatSessions,fetchGetChatHistoryApi,updateChatTitleApi,deleteChatApi,fetchInitializeChatApi,fetchSendMessageApi,
+import {
+  fetchGetChatSessions,
+  fetchGetChatHistoryApi,
+  updateChatTitleApi,
+  deleteChatApi,
+  fetchInitializeChatApi,
+  fetchSendMessageApi,
 } from '../../api/chatApi'
 import './Dashboard.css'
 import { useAuth } from '../../context/AuthContext'
 import { getUser } from '../../api/userApi'
 
+const QUIZ_CHAT_THRESHOLD = 5
+
 function Dashboard() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { logout, user } = useAuth()
   const { chatId: activeChatId } = useParams()
+
+  const isQuizMode = location.pathname.includes('/quiz/')
 
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 720)
   const [resourcesOpen, setResourcesOpen] = useState(false)
@@ -33,8 +43,6 @@ function Dashboard() {
   const [search, setSearch] = useState('')
 
   const [messages, setMessages] = useState([])
-  const [activeChat, setActiveChat] = useState(null)
-  const [chatUsageCount, setChatUsageCount] = useState(0)
   const [chats, setChats] = useState([])
   const [expandedChats, setExpandedChats] = useState([])
 
@@ -44,10 +52,17 @@ function Dashboard() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [username, setUsername] = useState(user?.name || 'Kira')
-  const [userInfo, setUserInfo] = useState(null)
+  const [, setUserInfo] = useState(null)
 
   const menuRef = useRef(null)
   const profileMenuRef = useRef(null)
+
+  const userMessageCount = useMemo(
+    () => messages.filter((m) => m.role === 'user').length,
+    [messages]
+    
+  )
+  const quizUnlocked =  userMessageCount >= QUIZ_CHAT_THRESHOLD
 
   const visibleChats = useMemo(
     () =>
@@ -60,98 +75,77 @@ function Dashboard() {
     [chats, search]
   )
 
-  useEffect(() => {
-  let isMounted = true
-
-  const fetchUserProfile = async () => {
+  // 1. Defined at component level so it is accessible in JSX
+  const loadChatHistory = useCallback(async () => {
+    if (!activeChatId) return
     try {
-      const data = await getUser()
-      if (isMounted && data) {
-        setUserInfo(data)
-        const fetchedName =  data.name
-        if (fetchedName) {
-          setUsername(fetchedName)
-        }
-      }
+      const data = await fetchGetChatHistoryApi(activeChatId)
+      if (!data) return
+      const rawMessages = Array.isArray(data) ? data : data.messages || []
+      setMessages(rawMessages)
+      console.log(messages)
     } catch (error) {
-      console.error('Failed to fetch user profile:', error)
+      console.error('Failed to load chat history:', error)
     }
-  }
+  }, [activeChatId])
 
-  fetchUserProfile()
+  useEffect(() => {
+    let isMounted = true
+    const fetchUserProfile = async () => {
+      try {
+        const data = await getUser()
+        if (isMounted && data) {
+          setUserInfo(data)
+          if (data.name) setUsername(data.name)
+        }
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error)
+      }
+    }
+    fetchUserProfile()
+    return () => { isMounted = false }
+  }, [])
 
-  return () => {
-    isMounted = false
-  }
-}, [])
   const handleLogout = async () => {
     setProfileMenuOpen(false)
     await logout()
   }
 
-  // Fetch recent chat sessions list
   const loadChatSessions = async () => {
     try {
       const data = await fetchGetChatSessions()
       if (!data) return
-
       const sessionObjects = Array.isArray(data)
         ? data.map((item) => ({
-            id: item.id,
+            id: item.id || item._id,
             title: item.title || item.name || 'Untitled Chat',
           }))
         : []
-
       setChats(sessionObjects)
     } catch (error) {
       console.error('Failed to load chat sessions:', error)
     }
   }
 
-  // 1. Fetch recent chat sessions list on mount
   useEffect(() => {
     let isMounted = true
-
     const initSessions = async () => {
       if (isMounted) await loadChatSessions()
     }
-
     initSessions()
-
-    return () => {
-      isMounted = false
-    }
+    return () => { isMounted = false }
   }, [])
 
-  // 2. Fetch active chat message history directly when activeChatId changes in URL
+  // 2. Clear state or trigger history reload when activeChatId changes
   useEffect(() => {
     if (!activeChatId) {
       setMessages([])
       setPrompt('')
       return
     }
-
-    let isMounted = true
-    const loadChatHistory = async () => {
-      try {
-        const data = await fetchGetChatHistoryApi(activeChatId)
-        if (!isMounted || !data) return
-
-        const rawMessages = Array.isArray(data) ? data : data.messages || []
-        setMessages(rawMessages)
-      } catch (error) {
-        console.error('Failed to load chat history:', error)
-      }
-    }
-
     loadChatHistory()
+  }, [activeChatId, loadChatHistory])
 
-    return () => {
-      isMounted = false
-    }
-  }, [activeChatId])
-
-  // Context menu click backdrop handler
   useEffect(() => {
     const closeMenu = (event) => {
       if (
@@ -175,90 +169,54 @@ function Dashboard() {
     }
   }, [])
 
-  // Responsive sidebar toggle
   useEffect(() => {
     const mobileQuery = window.matchMedia('(max-width: 720px)')
     const handleViewportChange = (event) => {
       setSidebarOpen(!event.matches)
       if (!event.matches) setResourcesOpen(false)
     }
-
     mobileQuery.addEventListener('change', handleViewportChange)
     return () => mobileQuery.removeEventListener('change', handleViewportChange)
   }, [])
 
-  
-  // Handle submitting prompts for both new and existing chats
   const submitPrompt = async (event) => {
     event.preventDefault()
     const text = prompt.trim()
     if (!text) return
 
-    // Add user message to UI immediately
-    setMessages((current) => [...current, { role: 'user', content: text }])
+    const tempId = `temp-${Date.now()}`
+    const tempUserMsg = { id: tempId, role: 'user', text: text, content: text }
+    setMessages((current) => [...current, tempUserMsg])
     setPrompt('')
 
     try {
       if (!activeChatId) {
-        // 1. INITIALIZE NEW CHAT
         const data = await fetchInitializeChatApi(text)
-
         const newChatId = data.id || data.chat_id || data.chatId
-        const assistantReply = data.response || data.message || data.reply
 
-        if (assistantReply) {
-          setMessages((current) => [
-            ...current,
-            { role: 'assistant', content: assistantReply },
-          ])
-        }
-
-        // Refresh recent chats list in sidebar
-        await loadChatSessions()
-
-        // Navigate to the newly created chat session
         if (newChatId) {
           setExpandedChats([newChatId])
           navigate(`/app/${newChatId}`)
+        } else {
+          await loadChatSessions()
         }
       } else {
-        // 2. SEND MESSAGE TO EXISTING CHAT
-        const data = await fetchSendMessageApi(activeChatId, text)
-
-        const assistantReply =
-          data.response || data.message || data.reply || data.content
-
-        if (assistantReply) {
-          setMessages((current) => [
-            ...current,
-            { role: 'assistant', content: assistantReply },
-          ])
-        }
+        await fetchSendMessageApi(activeChatId, text)
+        await loadChatHistory()
       }
     } catch (error) {
       console.error('Failed to send message:', error)
-      setMessages((current) => [
-        ...current,
-        {
-          role: 'assistant',
-          content: 'Sorry, something went wrong. Please try again.',
-        },
-      ])
     }
   }
 
   const startNewChat = () => {
-    navigate('/dashboard/chat')
     setMessages([])
-    setActiveChat(null)
-    setChatUsageCount(0)
     setPrompt('')
     setExpandedChats([])
     navigate('/app')
     if (window.matchMedia('(max-width: 720px)').matches) setSidebarOpen(false)
   }
 
-  // Select chat from Recent list
   const openChat = (chatId) => {
     navigate(`/app/${chatId}`)
     setExpandedChats([chatId])
@@ -266,25 +224,21 @@ function Dashboard() {
   }
 
   const openQuiz = (chatId) => {
+    if (!quizUnlocked) return
     navigate(`/app/quiz/${chatId}`)
     if (window.matchMedia('(max-width: 720px)').matches) setSidebarOpen(false)
   }
 
-  // Accordion toggle: opening one group closes all others
   const toggleChat = (chatId) => {
-    setExpandedChats((current) =>
-      current.includes(chatId) ? [] : [chatId]
-    )
+    setExpandedChats((current) => (current.includes(chatId) ? [] : [chatId]))
   }
 
-  // Start editing mode for title
   const beginEditing = (chat) => {
     setEditingChatId(chat.id)
     setEditValue(chat.title)
     setOpenMenu(null)
   }
 
-  // 5. UPDATE CHAT TITLE
   const saveChatName = async (event, chatId) => {
     event.preventDefault()
     const newTitle = editValue.trim()
@@ -301,16 +255,12 @@ function Dashboard() {
     setEditingChatId(null)
   }
 
-  // 6. DELETE CHAT SESSION
   const deleteChat = async (chatId) => {
     try {
       await deleteChatApi(chatId)
-
-      // Update sidebar state
       setChats((current) => current.filter((item) => item.id !== chatId))
       setExpandedChats((current) => current.filter((id) => id !== chatId))
 
-      // If active chat was deleted, reset back to new chat screen
       if (String(activeChatId) === String(chatId)) {
         startNewChat()
       }
@@ -327,7 +277,7 @@ function Dashboard() {
         <div className="dashboard-brand-row">
           <div className="dashboard-brand-lockup">
             <span className="dashboard-logo-crop">
-              <img src={mentoraOwlLogo} alt="Mentora owl and book logo" />
+              <img src={mentoraOwlLogo} alt="Mentora owl logo" />
             </span>
             <span className="dashboard-brand-name">Mentora</span>
           </div>
@@ -413,15 +363,13 @@ function Dashboard() {
 
               {expandedChats.includes(chat.id) && (
                 <div className="recent-children">
-                  <button className="recent-child" type="button" onClick={() => openChat(chat.id)}>
+                  <button className={`recent-child ${!isQuizMode ? 'active' : ''}`} type="button" onClick={() => openChat(chat.id)}>
                     Chat
                   </button>
-                  <button className="recent-child" type="button" onClick={() => openQuiz(chat.id)}>
-                     Quiz
-                  </button>
-                  <button className={`recent-child ${view === 'chat' ? 'active' : ''}`} type="button" onClick={() => openChat(chat)}>Chat</button>
                   {quizUnlocked && (
-                    <button className={`recent-child ${view === 'quiz' ? 'active' : ''}`} type="button" onClick={openQuiz}>Quiz</button>
+                    <button className={`recent-child ${isQuizMode ? 'active' : ''}`} type="button" onClick={() => openQuiz(chat.id)}>
+                      Quiz
+                    </button>
                   )}
                 </div>
               )}
@@ -473,7 +421,7 @@ function Dashboard() {
         />
       )}
 
-      <section className="dashboard-main" aria-label="Chat with Mentora">
+      <section className="dashboard-main" aria-label="Main content area">
         {!sidebarOpen && (
           <button
             className="dashboard-icon-button floating-menu"
@@ -491,12 +439,19 @@ function Dashboard() {
         >
           Resources
         </button>
-        <ConversationChat
-          messages={messages}
-          prompt={prompt}
-          onPromptChange={(event) => setPrompt(event.target.value)}
-          onSubmit={submitPrompt}
-        />
+
+        {isQuizMode ? (
+          <ConversationQuiz chatId={activeChatId} />
+        ) : (
+          <ConversationChat
+            messages={messages}
+            setMessages={setMessages}
+            prompt={prompt}
+            onPromptChange={(event) => setPrompt(event.target.value)}
+            refetchHistory={loadChatHistory}
+            onSubmit={submitPrompt}
+          />
+        )}
       </section>
 
       <ResourcesPanel

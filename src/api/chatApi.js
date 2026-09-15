@@ -50,7 +50,7 @@ export const deleteChatApi = async (chatId) => {
  */
 export const updateMessageApi = async (chatId, messageId, newText) => {
   const response = await api.patch(`/chat/${chatId}/${messageId}`, {
-    message: newText,
+    message: newText.trim(),
   });
   return response.data;
 };

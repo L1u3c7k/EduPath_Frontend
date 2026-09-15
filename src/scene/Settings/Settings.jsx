@@ -59,11 +59,7 @@ function Settings({ isOpen, onClose, username, onUsernameChange }) {
     onClose()
   }, [onClose])
 
-  const goBackToMenu = () => {
-    setView('menu')
-    resetFormState()
-  }
-
+  
   useEffect(() => {
     if (!isOpen) return undefined
     const closeOnEscape = (event) => {
@@ -146,9 +142,7 @@ function Settings({ isOpen, onClose, username, onUsernameChange }) {
           onPointerDown={(event) => event.stopPropagation()}
         >
           <div className="settings-heading-row">
-            <button className="settings-back" type="button" aria-label="Back to menu" onClick={goBackToMenu}>
-              <ArrowBackRoundedIcon />
-            </button>
+            
             <h2>Edit Profile</h2>
             <button className="settings-close" type="button" aria-label="Close settings" onClick={closeSettings}>
               <CloseRoundedIcon />
@@ -183,9 +177,7 @@ function Settings({ isOpen, onClose, username, onUsernameChange }) {
           onPointerDown={(event) => event.stopPropagation()}
         >
           <div className="settings-heading-row">
-            <button className="settings-back" type="button" aria-label="Back to menu" onClick={goBackToMenu}>
-              <ArrowBackRoundedIcon />
-            </button>
+            
             <h2>Change Password</h2>
             <button className="settings-close" type="button" aria-label="Close settings" onClick={closeSettings}>
               <CloseRoundedIcon />

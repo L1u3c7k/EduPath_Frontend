@@ -13,7 +13,7 @@ const questions = [
 
 const createInitialResults = () => questions.map(() => ({ answer: '', attempts: 0, status: 'idle', submitted: '' }))
 
-function ConversationQuiz() {
+function ConversationQuiz({ chatId }) {
   const [results, setResults] = useState(createInitialResults)
   const quizCompleted = results.every((result) => result.status === 'correct' || result.attempts >= 3)
 
@@ -43,11 +43,19 @@ function ConversationQuiz() {
 
   return (
     <div className="quiz-view">
-      <h1>Quiz</h1>
+      <h1>Quiz {chatId ? `for Chat #${chatId}` : ''}</h1>
       <QuizIntro />
       <div className="quiz-question-list">
         {questions.map((question, index) => (
-          <QuizCard key={question.text} question={question} index={index} totalQuestions={questions.length} result={results[index]} onChange={changeAnswer} onSubmit={submitAnswer} />
+          <QuizCard 
+            key={question.text} 
+            question={question} 
+            index={index} 
+            totalQuestions={questions.length} 
+            result={results[index]} 
+            onChange={changeAnswer} 
+            onSubmit={submitAnswer} 
+          />
         ))}
       </div>
       {quizCompleted && <GenerateQuizButton onClick={generateAnotherQuiz} />}

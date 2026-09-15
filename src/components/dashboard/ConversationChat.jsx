@@ -1,23 +1,45 @@
 import { useEffect, useRef } from 'react'
+import { useParams } from 'react-router-dom'
 import ArrowUpwardRoundedIcon from '@mui/icons-material/ArrowUpwardRounded'
 import AssistantChat from './AssistantChat'
 import InitialChat from './InitialChat'
 import UserChat from './UserChat'
+import { updateMessageApi } from '../../api/chatApi'
 
 function ConversationChat({
-  messages = [], // ✅ Fixed default assignment syntax
+  messages = [],
+  setMessages,
   prompt = '',
   onPromptChange,
   onSubmit,
   isSending = false,
   isLoading = false,
   error = '',
+  refetchHistory,
 }) {
   const listRef = useRef(null)
+  const { chatId: activeChatId } = useParams()
 
-  // Safe helper to check message count
   const messageList = Array.isArray(messages) ? messages : []
   const hasMessages = messageList.length > 0
+
+  const handleUpdateUserMessage = async (messageId, newText) => {
+    if (typeof messageId === 'string' && messageId.startsWith('temp-')) {
+      console.warn('Cannot update message with a temporary ID.')
+      return
+    }
+
+    try {
+      await updateMessageApi(activeChatId, messageId, newText)
+
+      if (typeof refetchHistory === 'function') {
+        await refetchHistory()
+      }
+    } catch (err) {
+      console.error('Failed to update message:', "Can Only be Update for the latest message")
+      throw err
+    }
+  }
 
   useEffect(() => {
     const list = listRef.current
@@ -44,13 +66,21 @@ function ConversationChat({
           <article className="message message-assistant is-pending">Loading conversation…</article>
         ) : (
           messageList.map((message, index) => {
-            const ChatMessage = message.role === 'assistant' ? AssistantChat : UserChat
+            if (message.role === 'assistant') {
+              return (
+                <AssistantChat
+                  key={message.id ?? `assistant-${index}`}
+                  text={message.text || message.message || message.content || ''}
+                  pending={message.pending}
+                />
+              )
+            }
+
             return (
-              <ChatMessage
-                key={message.id ?? `${message.role}-${index}`}
-                /* ✅ Gracefully accepts 'text', 'message', or 'content' */
+              <UserChat
+                key={message.id ?? `user-${index}`}
                 text={message.text || message.message || message.content || ''}
-                pending={message.pending}
+                onUpdate={(newText) => handleUpdateUserMessage(message.id, newText)}
               />
             )
           })

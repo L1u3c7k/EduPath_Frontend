@@ -32,7 +32,6 @@ const PublicRoute = () => {
   }
 
   if (isAuthenticated) {
-    // FIX 1: Point to /app (matching your Route path)
     const from = location.state?.from?.pathname || "/app";
     return <Navigate to={from} replace />;
   }
@@ -57,7 +56,10 @@ function App() {
           {/* Protected Routes */}
           <Route element={<PrivateRoute />}>
             <Route path="/app" element={<Dashboard />} />
+            <Route path="/app/quiz/:chatId" element={<Dashboard />} />
             <Route path="/app/:chatId" element={<Dashboard />} />
+            {/* Added Route for Quiz View */}
+            
           </Route>
 
           {/* Fallback Catch-All */}

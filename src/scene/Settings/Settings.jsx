@@ -6,6 +6,8 @@ import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined'
+import Alert from '@mui/material/Alert'
+import Snackbar from '@mui/material/Snackbar'
 import './Settings.css'
 
 function SettingsPasswordField({ id, label, autoComplete }) {
@@ -15,7 +17,7 @@ function SettingsPasswordField({ id, label, autoComplete }) {
     <label className="password-change-field" htmlFor={id}>
       <span>{label}</span>
       <span className="password-change-input">
-        <input id={id} type={visible ? 'text' : 'password'} placeholder="Password" autoComplete={autoComplete} />
+        <input id={id} name={id} type={visible ? 'text' : 'password'} placeholder="Password" autoComplete={autoComplete} required />
         <button type="button" aria-label={`${visible ? 'Hide' : 'Show'} ${label.toLowerCase()}`} onClick={() => setVisible((current) => !current)}>
           {visible ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}
         </button>
@@ -27,6 +29,7 @@ function SettingsPasswordField({ id, label, autoComplete }) {
 function Settings({ isOpen, onClose, username, onUsernameChange }) {
   const [view, setView] = useState('menu')
   const [draftUsername, setDraftUsername] = useState(username)
+  const [alert, setAlert] = useState(null)
 
   const closeSettings = useCallback(() => {
     setView('menu')
@@ -49,6 +52,27 @@ function Settings({ isOpen, onClose, username, onUsernameChange }) {
     onUsernameChange(nextUsername)
     setDraftUsername(nextUsername)
     setView('menu')
+    setAlert({ severity: 'success', message: 'Username updated successfully.' })
+  }
+
+  const confirmPassword = (event) => {
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+    const newPassword = form.get('new-password')
+    const confirmPasswordValue = form.get('confirm-password')
+
+    if (newPassword !== confirmPasswordValue) {
+      setAlert({ severity: 'error', message: 'New passwords do not match.' })
+      return
+    }
+
+    event.currentTarget.reset()
+    setView('menu')
+    setAlert({ severity: 'success', message: 'Password updated successfully.' })
+  }
+
+  const closeAlert = (_event, reason) => {
+    if (reason !== 'clickaway') setAlert(null)
   }
 
   if (!isOpen) return null
@@ -97,7 +121,7 @@ function Settings({ isOpen, onClose, username, onUsernameChange }) {
             <h2 className="settings-subpage-title" id="change-password-title">Change Password</h2>
             <button className="settings-close edit-profile-close" type="button" aria-label="Close change password" onClick={closeSettings}><CloseRoundedIcon /></button>
           </div>
-          <form className="change-password-form" onSubmit={(event) => event.preventDefault()}>
+          <form className="change-password-form" onSubmit={confirmPassword}>
             <SettingsPasswordField id="current-password" label="Current Password" autoComplete="current-password" />
             <SettingsPasswordField id="new-password" label="New Password" autoComplete="new-password" />
             <SettingsPasswordField id="confirm-password" label="Confirm Password" autoComplete="new-password" />
@@ -105,6 +129,11 @@ function Settings({ isOpen, onClose, username, onUsernameChange }) {
           </form>
         </section>
       )}
+      <Snackbar open={Boolean(alert)} autoHideDuration={4000} onClose={closeAlert} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+        <Alert severity={alert?.severity ?? 'success'} variant="filled" onClose={closeAlert} sx={{ width: '100%' }}>
+          {alert?.message}
+        </Alert>
+      </Snackbar>
     </div>
   )
 }

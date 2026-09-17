@@ -169,6 +169,8 @@
 .recent-chats {
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
   margin-top: 5px;
   overflow: hidden;
 }
@@ -176,6 +178,13 @@
 .recent-chats h2 {
   margin: 0 0 8px;
   font-size: 1.25rem;
+}
+
+.recent-list {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .recent-group {

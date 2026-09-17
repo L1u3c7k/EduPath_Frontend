@@ -193,22 +193,31 @@
   white-space: nowrap;
 }
 
+.edit-profile-form {
+  display: flex;
+  flex-direction: column;
+}
+
 .profile-detail-row {
-  display: grid;
-  grid-template-columns: 90px minmax(0, 1fr);
-  gap: 16px;
+  display: flex;
+  gap: 12px;
   align-items: start;
   margin-bottom: 19px;
   font-size: 1rem;
 }
 
 .profile-detail-row strong {
+  flex: 0 0 96px;
   font-weight: 600;
 }
 
 .profile-detail-row span {
-  text-align: right;
+  min-width: 0;
+  flex: 1;
+  direction: ltr;
+  text-align: left;
   overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 
 .username-field {
@@ -216,9 +225,9 @@
 }
 
 .username-field input {
-  width: 80%;
+  width: auto;
   min-width: 0;
-  justify-self: end;
+  flex: 1;
   padding: 5px 0;
   color: #30485e;
   background: transparent;
@@ -226,11 +235,13 @@
   border-bottom: 1px solid rgb(47 72 96 / 40%);
   outline: 0;
   font: inherit;
+  direction: ltr;
   text-align: right;
 }
 
 .username-field input:focus {
   border-color: #527c9e;
+  text-align: left;
 }
 
 .confirm-profile-button {
@@ -356,6 +367,10 @@
 @media (max-width: 480px) {
   .settings-dialog {
     padding: 25px 25px 30px;
+  }
+
+  .profile-detail-row span {
+    white-space: normal;
   }
 }
 

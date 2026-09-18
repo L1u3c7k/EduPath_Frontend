@@ -6,7 +6,8 @@ import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined'
-
+import Alert from '@mui/material/Alert'
+import Snackbar from '@mui/material/Snackbar'
 import './Settings.css'
 import { updateUserPassword } from '../../api/userApi'
 
@@ -41,21 +42,7 @@ function SettingsPasswordField({ id, label, autoComplete, value, onChange }) {
 function Settings({ isOpen, onClose, username, onUsernameChange, onPasswordChange }) {
   const [view, setView] = useState('menu')
   const [draftUsername, setDraftUsername] = useState(username)
-
-  // Password state & validation messaging
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  })
-  const [passwordError, setPasswordError] = useState('')
-
-  const resetFormState = useCallback(() => {
-    setView('menu')
-    setDraftUsername(username)
-    setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
-    setPasswordError('')
-  }, [username])
+   const [alert, setAlert] = useState(null)
 
   const closeSettings = useCallback(() => {
     resetFormState()
@@ -78,6 +65,7 @@ function Settings({ isOpen, onClose, username, onUsernameChange, onPasswordChang
     onUsernameChange(nextUsername)
     setDraftUsername(nextUsername)
     setView('menu')
+    setAlert({ severity: 'success', message: 'Username updated successfully.' })
   }
 
   // Handle keystrokes for password fields
@@ -240,6 +228,11 @@ function Settings({ isOpen, onClose, username, onUsernameChange, onPasswordChang
           </form>
         </section>
       )}
+      <Snackbar open={Boolean(alert)} autoHideDuration={4000} onClose={closeAlert} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+        <Alert severity={alert?.severity ?? 'success'} variant="filled" onClose={closeAlert} sx={{ width: '100%' }}>
+          {alert?.message}
+        </Alert>
+      </Snackbar>
     </div>
   )
 }

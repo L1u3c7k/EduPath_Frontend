@@ -348,12 +348,9 @@ function Dashboard() {
         </label>
         <section className="recent-chats" aria-labelledby="recent-title">
           <h2 id="recent-title">Recent</h2>
-          {visibleChats.map((chat) => (
-            <div
-              className={`recent-group ${activeChatId === String(chat.id) ? 'active' : ''}`}
-              key={chat.id}
-              ref={openMenu === chat.id ? menuRef : null}
-            >
+          <div className="recent-list">
+            {visibleChats.map((chat) => (
+            <div className="recent-group" key={chat} ref={openMenu === chat ? menuRef : null}>
               <div className="recent-group-title">
                 {editingChatId === chat.id ? (
                   <form className="chat-name-form" onSubmit={(event) => saveChatName(event, chat.id)}>
@@ -412,8 +409,9 @@ function Dashboard() {
                   )}
                 </div>
               )}
-            </div>
-          ))}
+              </div>
+            ))}
+          </div>
         </section>
 
         <div className="profile-menu-wrap" ref={profileMenuRef}>

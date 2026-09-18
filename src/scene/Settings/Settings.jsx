@@ -51,8 +51,8 @@ function Settings({ isOpen, onClose, username, onUsernameChange }) {
     if (!nextUsername) return
     onUsernameChange(nextUsername)
     setDraftUsername(nextUsername)
-    setView('menu')
     setAlert({ severity: 'success', message: 'Username updated successfully.' })
+    closeSettings()
   }
 
   const confirmPassword = (event) => {
@@ -67,18 +67,18 @@ function Settings({ isOpen, onClose, username, onUsernameChange }) {
     }
 
     event.currentTarget.reset()
-    setView('menu')
     setAlert({ severity: 'success', message: 'Password updated successfully.' })
+    closeSettings()
   }
 
   const closeAlert = (_event, reason) => {
     if (reason !== 'clickaway') setAlert(null)
   }
 
-  if (!isOpen) return null
-
   return (
-    <div className="settings-overlay" onPointerDown={closeSettings}>
+    <>
+      {isOpen && (
+      <div className="settings-overlay" onPointerDown={closeSettings}>
       {view === 'menu' && (
         <section className="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title" onPointerDown={(event) => event.stopPropagation()}>
           <div className="settings-heading-row">
@@ -129,12 +129,20 @@ function Settings({ isOpen, onClose, username, onUsernameChange }) {
           </form>
         </section>
       )}
-      <Snackbar open={Boolean(alert)} autoHideDuration={4000} onClose={closeAlert} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+      </div>
+      )}
+      <Snackbar
+        key={alert?.message}
+        open={Boolean(alert)}
+        autoHideDuration={4000}
+        onClose={closeAlert}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
         <Alert severity={alert?.severity ?? 'success'} variant="filled" onClose={closeAlert} sx={{ width: '100%' }}>
           {alert?.message}
         </Alert>
       </Snackbar>
-    </div>
+    </>
   )
 }
 

@@ -372,6 +372,7 @@
   .profile-detail-row span {
     white-space: normal;
   }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -391,4 +392,5 @@
   .settings-dialog {
     animation: none;
   }
+
 }

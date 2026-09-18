@@ -14,7 +14,7 @@ import ConversationChat from '../../components/dashboard/ConversationChat'
 import ResourcesPanel from '../../components/dashboard/ResourcesPanel'
 import ConversationQuiz from '../../components/dashboard/ConversationQuiz'
 import { NewChatIcon, SidebarIcon } from '../../components/dashboard/DashboardIcons'
-import { Settings } from '../Settings'
+import Settings  from "../Settings/Settings"
 import {
   fetchGetChatSessions,
   fetchGetChatHistoryApi,
@@ -110,7 +110,9 @@ function Dashboard() {
 
   const handleLogout = async () => {
     setProfileMenuOpen(false)
+    setLogoutDialogOpen(false)
     await logout()
+    navigate('/')
   }
 
   const loadChatSessions = async () => {
@@ -196,34 +198,43 @@ function Dashboard() {
   }, [])
 
   const submitPrompt = async (event) => {
-    event.preventDefault()
-    const text = prompt.trim()
-    if (!text) return
+  event.preventDefault()
+  const text = prompt.trim()
+  if (!text) return
 
-    const tempId = `temp-${Date.now()}`
-    const tempUserMsg = { id: tempId, role: 'user', text: text, content: text }
-    setMessages((current) => [...current, tempUserMsg])
-    setPrompt('')
+  const tempId = `temp-${Date.now()}`
+  const tempUserMsg = { id: tempId, role: 'user', text: text, content: text }
+  
+  // Optimistically show the user's message
+  setMessages((current) => [...current, tempUserMsg])
+  setPrompt('')
 
-    try {
-      if (!activeChatId) {
-        const data = await fetchInitializeChatApi(text)
-        const newChatId = data.id || data.chat_id || data.chatId
+  try {
+    if (!activeChatId) {
+      // 1. Initialize the new chat on the backend
+      const data = await fetchInitializeChatApi(text)
+      const newChatId = data.id || data.chat_id || data.chatId
 
-        if (newChatId) {
-          setExpandedChats([newChatId])
-          navigate(`/app/${newChatId}`)
-        } else {
-          await loadChatSessions()
-        }
+      if (newChatId) {
+        setExpandedChats([newChatId])
+        
+        // 2. Fetch the updated sidebar list so the new chat shows up immediately
+        await loadChatSessions()
+
+        // 3. Navigate to the new chat route
+        navigate(`/app/${newChatId}`)
       } else {
-        await fetchSendMessageApi(activeChatId, text)
-        await loadChatHistory()
+        await loadChatSessions()
       }
-    } catch (error) {
-      console.error('Failed to send message:', error)
+    } else {
+      // Logic for existing chats
+      await fetchSendMessageApi(activeChatId, text)
+      await loadChatHistory()
     }
+  } catch (error) {
+    console.error('Failed to send message:', error)
   }
+}
 
   const startNewChat = () => {
     setMessages([])
@@ -276,18 +287,31 @@ function Dashboard() {
     setChatToDelete(chat)
   }
 
-  const deleteChat = () => {
-    const chat = chatToDelete
-    if (!chat) return
-    setChats((current) => current.filter((item) => item !== chat))
-    setExpandedChats((current) => current.filter((item) => item !== chat))
-    if (chat === activeChat) {
-      setMessages([])
-      setChatUsageCount(0)
-      setActiveChat(null)
+  const deleteChat = async () => {
+    if (!chatToDelete) return
+
+    const targetId = chatToDelete.id
+
+    try {
+      // 1. Call API endpoint to delete on backend
+      await deleteChatApi(targetId)
+
+      // 2. Remove chat from sidebar state list
+      setChats((current) => current.filter((item) => item.id !== targetId))
+      setExpandedChats((current) => current.filter((id) => id !== targetId))
+
+      // 3. If currently viewing the deleted chat, reset state and navigate back
+      if (String(activeChatId) === String(targetId)) {
+        setMessages([])
+        navigate('/app')
+      }
+    } catch (error) {
+      console.error('Failed to delete chat session:', error)
+    } finally {
+      // 4. Cleanup modal and selection states
+      setOpenMenu(null)
+      setChatToDelete(null)
     }
-    setOpenMenu(null)
-    setChatToDelete(null)
   }
 
   return (
@@ -518,7 +542,7 @@ function Dashboard() {
             <p id="logout-description">Are you sure you want to log out?</p>
             <div className="delete-chat-actions">
               <button type="button" onClick={() => setLogoutDialogOpen(false)}>Cancel</button>
-              <button className="logout-confirm" type="button" autoFocus onClick={() => navigate('/')}>Log out</button>
+              <button className="logout-confirm" type="button" autoFocus onClick={handleLogout}>Log out</button>
             </div>
           </div>
         </div>

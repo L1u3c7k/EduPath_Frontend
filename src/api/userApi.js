@@ -12,8 +12,10 @@ export const getUser = async () => {
   return response.data;
 };
 
-export const updateUserPassword = async (payload) => {
-  // Matched to backend path: PATCH /api/v1/users/change-password
-  const response = await api.patch("/user/change-password", payload);
+export const updateUserPassword = async ({ currentPassword, newPassword }) => {
+  const response = await api.patch("/user/change-password", {
+    current_password: currentPassword,
+    new_password: newPassword,
+  });
   return response.data;
 };

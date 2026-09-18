@@ -6,8 +6,9 @@ import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined'
-import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
+
 import './Settings.css'
+import { updateUserPassword } from '../../api/userApi'
 
 function SettingsPasswordField({ id, label, autoComplete, value, onChange }) {
   const [visible, setVisible] = useState(false)
@@ -37,17 +38,30 @@ function SettingsPasswordField({ id, label, autoComplete, value, onChange }) {
   )
 }
 
-function Settings({ isOpen, onClose, username, onUsernameChange }) {
+function Settings({ isOpen, onClose, username, onUsernameChange, onPasswordChange }) {
   const [view, setView] = useState('menu')
   const [draftUsername, setDraftUsername] = useState(username)
 
-  const closeSettings = useCallback(() => {
+  // Password state & validation messaging
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  })
+  const [passwordError, setPasswordError] = useState('')
+
+  const resetFormState = useCallback(() => {
     setView('menu')
+    setDraftUsername(username)
+    setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+    setPasswordError('')
+  }, [username])
+
+  const closeSettings = useCallback(() => {
     resetFormState()
     onClose()
-  }, [onClose])
+  }, [onClose, resetFormState])
 
-  
   useEffect(() => {
     if (!isOpen) return undefined
     const closeOnEscape = (event) => {
@@ -65,6 +79,46 @@ function Settings({ isOpen, onClose, username, onUsernameChange }) {
     setDraftUsername(nextUsername)
     setView('menu')
   }
+
+  // Handle keystrokes for password fields
+  const handlePasswordInput = (field) => (event) => {
+    setPasswordForm((prev) => ({ ...prev, [field]: event.target.value }))
+    if (passwordError) setPasswordError('')
+  }
+
+  const confirmPasswordChange = async (event) => {
+  event.preventDefault()
+  const { currentPassword, newPassword, confirmPassword } = passwordForm
+
+  if (newPassword !== confirmPassword) {
+    setPasswordError('New passwords do not match.')
+    return
+  }
+
+  if (newPassword.length < 8) {
+    setPasswordError('Password must be at least 8 characters long.')
+    return
+  }
+
+  try {
+    await updateUserPassword({ currentPassword, newPassword })
+    console.log("Password updated successfully")
+    resetFormState()
+  } catch (err) {
+    // Print full error object to DevTools console
+    console.error("Change Password Error:", err.response?.data)
+
+    // FastAPI returns errors under response.data.detail
+    const detail = err?.response?.data?.detail
+    const errorMessage = typeof detail === 'string' 
+      ? detail 
+      : 'Failed to update password.'
+
+    setPasswordError(errorMessage)
+  }
+}
+
+  
 
   if (!isOpen) return null
 
@@ -85,18 +139,32 @@ function Settings({ isOpen, onClose, username, onUsernameChange }) {
             </button>
           </div>
           <div className="settings-actions">
-            <button type="button" onClick={() => { setDraftUsername(username); setView('profile') }}><AccountCircleOutlinedIcon /><span>Edit Profile</span></button>
-            <button type="button" onClick={() => setView('password')}><LockOutlinedIcon /><span>Change Password</span></button>
+            <button type="button" onClick={() => { setDraftUsername(username); setView('profile') }}>
+              <AccountCircleOutlinedIcon /><span>Edit Profile</span>
+            </button>
+            <button type="button" onClick={() => setView('password')}>
+              <LockOutlinedIcon /><span>Change Password</span>
+            </button>
           </div>
         </section>
       )}
 
       {view === 'profile' && (
-        <section className="settings-dialog edit-profile-dialog" role="dialog" aria-modal="true" aria-labelledby="edit-profile-title" onPointerDown={(event) => event.stopPropagation()}>
+        <section
+          className="settings-dialog edit-profile-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-profile-title"
+          onPointerDown={(event) => event.stopPropagation()}
+        >
           <div className="settings-subpage-heading">
-            <button className="settings-close edit-profile-back" type="button" aria-label="Back to settings" onClick={() => setView('menu')}><ArrowBackRoundedIcon /></button>
+            <button className="settings-close edit-profile-back" type="button" aria-label="Back to settings" onClick={() => setView('menu')}>
+              <ArrowBackRoundedIcon />
+            </button>
             <h2 className="settings-subpage-title" id="edit-profile-title">Edit Profile</h2>
-            <button className="settings-close edit-profile-close" type="button" aria-label="Close edit profile" onClick={closeSettings}><CloseRoundedIcon /></button>
+            <button className="settings-close edit-profile-close" type="button" aria-label="Close edit profile" onClick={closeSettings}>
+              <CloseRoundedIcon />
+            </button>
           </div>
           <div className="edit-profile-avatar-wrap">
             <span className="edit-profile-avatar" aria-hidden="true">
@@ -107,15 +175,20 @@ function Settings({ isOpen, onClose, username, onUsernameChange }) {
               <input type="file" accept="image/*" />
             </label>
           </div>
-          <div className="profile-detail-row">
-            <strong>Email</strong>
-            <span>2023-miit-cse-022@miit.edu.mm</span>
-          </div>
           <form className="edit-profile-form" onSubmit={confirmProfile}>
-            <div className="profile-detail-row"><strong>Email</strong><span>2023-miit-cse-022@miit.edu.mm</span></div>
+            <div className="profile-detail-row">
+              <strong>Email</strong>
+              <span>2023-miit-cse-022@miit.edu.mm</span>
+            </div>
             <label className="profile-detail-row username-field" htmlFor="profile-username">
               <strong>Username</strong>
-              <input id="profile-username" value={draftUsername} onChange={(event) => setDraftUsername(event.target.value)} autoComplete="username" required />
+              <input
+                id="profile-username"
+                value={draftUsername}
+                onChange={(event) => setDraftUsername(event.target.value)}
+                autoComplete="username"
+                required
+              />
             </label>
             <button className="confirm-profile-button" type="submit">Confirm</button>
           </form>
@@ -123,16 +196,46 @@ function Settings({ isOpen, onClose, username, onUsernameChange }) {
       )}
 
       {view === 'password' && (
-        <section className="settings-dialog change-password-dialog" role="dialog" aria-modal="true" aria-labelledby="change-password-title" onPointerDown={(event) => event.stopPropagation()}>
+        <section
+          className="settings-dialog change-password-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="change-password-title"
+          onPointerDown={(event) => event.stopPropagation()}
+        >
           <div className="settings-subpage-heading">
-            <button className="settings-close edit-profile-back" type="button" aria-label="Back to settings" onClick={() => setView('menu')}><ArrowBackRoundedIcon /></button>
+            <button className="settings-close edit-profile-back" type="button" aria-label="Back to settings" onClick={() => setView('menu')}>
+              <ArrowBackRoundedIcon />
+            </button>
             <h2 className="settings-subpage-title" id="change-password-title">Change Password</h2>
-            <button className="settings-close edit-profile-close" type="button" aria-label="Close change password" onClick={closeSettings}><CloseRoundedIcon /></button>
+            <button className="settings-close edit-profile-close" type="button" aria-label="Close change password" onClick={closeSettings}>
+              <CloseRoundedIcon />
+            </button>
           </div>
-          <form className="change-password-form" onSubmit={(event) => event.preventDefault()}>
-            <SettingsPasswordField id="current-password" label="Current Password" autoComplete="current-password" />
-            <SettingsPasswordField id="new-password" label="New Password" autoComplete="new-password" />
-            <SettingsPasswordField id="confirm-password" label="Confirm Password" autoComplete="new-password" />
+          <form className="change-password-form" onSubmit={confirmPasswordChange}>
+            {passwordError && <p className="password-error">{passwordError}</p>}
+
+            <SettingsPasswordField
+              id="current-password"
+              label="Current Password"
+              autoComplete="current-password"
+              value={passwordForm.currentPassword}
+              onChange={handlePasswordInput('currentPassword')}
+            />
+            <SettingsPasswordField
+              id="new-password"
+              label="New Password"
+              autoComplete="new-password"
+              value={passwordForm.newPassword}
+              onChange={handlePasswordInput('newPassword')}
+            />
+            <SettingsPasswordField
+              id="confirm-password"
+              label="Confirm Password"
+              autoComplete="new-password"
+              value={passwordForm.confirmPassword}
+              onChange={handlePasswordInput('confirmPassword')}
+            />
             <button className="save-password-button" type="submit">Save Password</button>
           </form>
         </section>

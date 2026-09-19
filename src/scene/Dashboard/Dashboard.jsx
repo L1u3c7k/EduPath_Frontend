@@ -346,11 +346,11 @@ function Dashboard() {
             aria-label="Search chats"
           />
         </label>
-        <section className="recent-chats" aria-labelledby="recent-title">
+        <section className="recent-chats " aria-labelledby="recent-title">
           <h2 id="recent-title">Recent</h2>
-          <div className="recent-list">
+          <div className="recent-list hide-scrollbar">
             {visibleChats.map((chat) => (
-            <div className="recent-group" key={chat} ref={openMenu === chat ? menuRef : null}>
+            <div  className="recent-group" key={chat.id} ref={openMenu === chat.id ? menuRef : null}>
               <div className="recent-group-title">
                 {editingChatId === chat.id ? (
                   <form className="chat-name-form" onSubmit={(event) => saveChatName(event, chat.id)}>

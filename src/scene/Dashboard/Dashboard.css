@@ -11,6 +11,19 @@
   transition: grid-template-columns 220ms ease;
 }
 
+.hide-scrollbar {
+  /* 1. Hide for Chrome, Safari, Opera, and newer Edge (WebKit) */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 2. Hide for Firefox */
+  scrollbar-width: none;
+
+  /* 3. Hide for Internet Explorer and legacy Edge */
+  -ms-overflow-style: none; 
+}
+
 .dashboard-sidebar,
 .resources-panel {
   min-height: 100svh;

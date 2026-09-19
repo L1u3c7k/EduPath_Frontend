@@ -42,12 +42,28 @@ function SettingsPasswordField({ id, label, autoComplete, value, onChange }) {
 function Settings({ isOpen, onClose, username, onUsernameChange, onPasswordChange }) {
   const [view, setView] = useState('menu')
   const [draftUsername, setDraftUsername] = useState(username)
-   const [alert, setAlert] = useState(null)
+  const [alert, setAlert] = useState(null)
 
+  // 1. Declare state variables first
+  const initialPasswordState = { currentPassword: '', newPassword: '', confirmPassword: '' }
+  const [passwordForm, setPasswordForm] = useState(initialPasswordState)
+  const [passwordError, setPasswordError] = useState('')
+
+  // 2. Define resetFormState BEFORE closeSettings uses it
+  const resetFormState = useCallback(() => {
+    setPasswordForm(initialPasswordState)
+    setPasswordError('')
+  }, [])
+
+  // 3. Now closeSettings can safely reference resetFormState
   const closeSettings = useCallback(() => {
     resetFormState()
     onClose()
   }, [onClose, resetFormState])
+
+  const closeAlert = (_event, reason) => {
+    if (reason !== 'clickaway') setAlert(null)
+  }
 
   useEffect(() => {
     if (!isOpen) return undefined
@@ -68,45 +84,41 @@ function Settings({ isOpen, onClose, username, onUsernameChange, onPasswordChang
     setAlert({ severity: 'success', message: 'Username updated successfully.' })
   }
 
-  // Handle keystrokes for password fields
   const handlePasswordInput = (field) => (event) => {
     setPasswordForm((prev) => ({ ...prev, [field]: event.target.value }))
     if (passwordError) setPasswordError('')
   }
 
   const confirmPasswordChange = async (event) => {
-  event.preventDefault()
-  const { currentPassword, newPassword, confirmPassword } = passwordForm
+    event.preventDefault()
+    const { currentPassword, newPassword, confirmPassword } = passwordForm
 
-  if (newPassword !== confirmPassword) {
-    setPasswordError('New passwords do not match.')
-    return
+    if (newPassword !== confirmPassword) {
+      setAlert({ severity: 'error', message: 'New passwords do not match.' })
+      return
+    }
+
+    if (newPassword.length < 8) {
+      setAlert({ severity: 'error', message: 'Password must be at least 8 characters long.' })
+      return
+    }
+
+    try {
+      await updateUserPassword({ currentPassword, newPassword })
+      resetFormState()
+      setView('menu')
+      setAlert({ severity: 'success', message: 'Password updated successfully.' })
+    } catch (err) {
+      console.error("Change Password Error:", err.response?.data)
+
+      const detail = err?.response?.data?.detail
+      const errorMessage = typeof detail === 'string' 
+        ? detail 
+        : 'Failed to update password.'
+
+      setAlert({ severity: 'error', message: errorMessage })
+    }
   }
-
-  if (newPassword.length < 8) {
-    setPasswordError('Password must be at least 8 characters long.')
-    return
-  }
-
-  try {
-    await updateUserPassword({ currentPassword, newPassword })
-    console.log("Password updated successfully")
-    resetFormState()
-  } catch (err) {
-    // Print full error object to DevTools console
-    console.error("Change Password Error:", err.response?.data)
-
-    // FastAPI returns errors under response.data.detail
-    const detail = err?.response?.data?.detail
-    const errorMessage = typeof detail === 'string' 
-      ? detail 
-      : 'Failed to update password.'
-
-    setPasswordError(errorMessage)
-  }
-}
-
-  
 
   if (!isOpen) return null
 
@@ -201,8 +213,6 @@ function Settings({ isOpen, onClose, username, onUsernameChange, onPasswordChang
             </button>
           </div>
           <form className="change-password-form" onSubmit={confirmPasswordChange}>
-            {passwordError && <p className="password-error">{passwordError}</p>}
-
             <SettingsPasswordField
               id="current-password"
               label="Current Password"
@@ -228,6 +238,7 @@ function Settings({ isOpen, onClose, username, onUsernameChange, onPasswordChang
           </form>
         </section>
       )}
+
       <Snackbar open={Boolean(alert)} autoHideDuration={4000} onClose={closeAlert} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
         <Alert severity={alert?.severity ?? 'success'} variant="filled" onClose={closeAlert} sx={{ width: '100%' }}>
           {alert?.message}
@@ -236,5 +247,4 @@ function Settings({ isOpen, onClose, username, onUsernameChange, onPasswordChang
     </div>
   )
 }
-
 export default Settings

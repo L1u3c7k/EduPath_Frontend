@@ -236,7 +236,7 @@
   outline: 0;
   font: inherit;
   direction: ltr;
-  text-align: right;
+  text-align: left;
 }
 
 .username-field input:focus {

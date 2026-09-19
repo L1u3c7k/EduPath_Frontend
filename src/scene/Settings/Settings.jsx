@@ -80,7 +80,6 @@ function Settings({ isOpen, onClose, username, onUsernameChange, onPasswordChang
     if (!nextUsername) return
     onUsernameChange(nextUsername)
     setDraftUsername(nextUsername)
-    setView('menu')
     setAlert({ severity: 'success', message: 'Username updated successfully.' })
   }
 
@@ -106,8 +105,8 @@ function Settings({ isOpen, onClose, username, onUsernameChange, onPasswordChang
     try {
       await updateUserPassword({ currentPassword, newPassword })
       resetFormState()
-      setView('menu')
-      setAlert({ severity: 'success', message: 'Password updated successfully.' })
+        setAlert({ severity: 'success', message: 'Password updated successfully.' })
+    closeSettings()
     } catch (err) {
       console.error("Change Password Error:", err.response?.data)
 
@@ -120,10 +119,10 @@ function Settings({ isOpen, onClose, username, onUsernameChange, onPasswordChang
     }
   }
 
-  if (!isOpen) return null
-
   return (
-    <div className="settings-overlay" onPointerDown={closeSettings}>
+    <>
+      {isOpen && (
+      <div className="settings-overlay" onPointerDown={closeSettings}>
       {view === 'menu' && (
         <section
           className="settings-dialog"
@@ -238,13 +237,22 @@ function Settings({ isOpen, onClose, username, onUsernameChange, onPasswordChang
           </form>
         </section>
       )}
+      </div>
+      )}
+      <Snackbar
+        key={alert?.message}
+        open={Boolean(alert)}
+        autoHideDuration={4000}
+        onClose={closeAlert}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
 
       <Snackbar open={Boolean(alert)} autoHideDuration={4000} onClose={closeAlert} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
         <Alert severity={alert?.severity ?? 'success'} variant="filled" onClose={closeAlert} sx={{ width: '100%' }}>
           {alert?.message}
         </Alert>
       </Snackbar>
-    </div>
+    </>
   )
 }
 export default Settings

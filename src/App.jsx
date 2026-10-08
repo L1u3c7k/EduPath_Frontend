@@ -41,7 +41,7 @@ const PublicRoute = () => {
 
 function App() {
   return (
-    <BrowserRouter basename="/EduPath">
+    <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || '/'}>
       <AuthProvider>
         <Routes>
           {/* Default entry point redirect */}

@@ -41,6 +41,7 @@ function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 720)
   const [resourcesOpen, setResourcesOpen] = useState(false)
   const [prompt, setPrompt] = useState('')
+  const [isSending, setIsSending] = useState(false)
   const [search, setSearch] = useState('')
 
   const [messages, setMessages] = useState([])
@@ -85,6 +86,21 @@ function Dashboard() {
     [messages]
   )
   const quizUnlocked = userMessageCount >= QUIZ_CHAT_THRESHOLD
+  const sourceDocuments = [...messages]
+    .reverse()
+    .find((message) => message.role === 'assistant' && Array.isArray(message.source_documents) && message.source_documents.length > 0)
+    ?.source_documents || []
+
+  useEffect(() => {
+    const latestSourceDocuments = [...messages]
+      .reverse()
+      .find((message) => message.role === 'assistant' && Array.isArray(message.source_documents) && message.source_documents.length > 0)
+      ?.source_documents
+
+    if (latestSourceDocuments) {
+      console.log('Source documents:', latestSourceDocuments)
+    }
+  }, [messages])
 
   const visibleChats = useMemo(
     () =>
@@ -217,18 +233,23 @@ function Dashboard() {
   const submitPrompt = async (event) => {
     event.preventDefault()
     const text = prompt.trim()
-    if (!text) return
+    if (!text || isSending) return
 
     const tempId = `temp-${Date.now()}`
     const tempUserMsg = { id: tempId, role: 'user', text: text, content: text }
     
     setMessages((current) => [...current, tempUserMsg])
     setPrompt('')
+    setIsSending(true)
 
     try {
       if (!activeChatId) {
         const data = await fetchInitializeChatApi(text)
         const newChatId = data.id || data.chat_id || data.chatId
+
+        if (Array.isArray(data.messages)) {
+          setMessages(data.messages)
+        }
 
         if (newChatId) {
           setExpandedChats([newChatId])
@@ -238,11 +259,17 @@ function Dashboard() {
           await loadChatSessions()
         }
       } else {
-        await fetchSendMessageApi(activeChatId, text)
-        await loadChatHistory()
+        const assistantMessage = await fetchSendMessageApi(activeChatId, text)
+        if (assistantMessage?.role === 'assistant' && assistantMessage.message) {
+          setMessages((current) => [...current, assistantMessage])
+        } else {
+          await loadChatHistory()
+        }
       }
     } catch (error) {
       console.error('Failed to send message:', error)
+    } finally {
+      setIsSending(false)
     }
   }
 
@@ -544,6 +571,7 @@ function Dashboard() {
             isGeneratingQuiz={isGeneratingQuiz}
             quizGenerationError={quizGenerationError}
             onPromptChange={(event) => setPrompt(event.target.value)}
+            isSending={isSending}
             refetchHistory={loadChatHistory}
             onSubmit={submitPrompt}
           />
@@ -552,7 +580,7 @@ function Dashboard() {
 
       <ResourcesPanel
         isOpen={resourcesOpen}
-        hasMessages={messages.length > 0}
+        sourceDocuments={sourceDocuments}
         onClose={() => setResourcesOpen(false)}
       />
 

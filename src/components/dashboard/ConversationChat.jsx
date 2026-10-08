@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import ArrowUpwardRoundedIcon from '@mui/icons-material/ArrowUpwardRounded'
+import Skeleton from '@mui/material/Skeleton'
 import AssistantChat from './AssistantChat'
 import InitialChat from './InitialChat'
 import UserChat from './UserChat'
@@ -93,6 +94,16 @@ function ConversationChat({
               />
             )
           })
+        )}
+        {isSending && (
+          <div className="assistant-message-wrap" role="status" aria-label="Loading AI response">
+            <Skeleton
+              sx={{ bgcolor: '#efe7e7ၤF', borderRadius: '0 39px 39px 39px' }}
+              variant="rectangular"
+              width={"90%"}
+              height={118}
+            />
+          </div>
         )}
       </div>
       {error ? <p className="chat-status-error">{error}</p> : null}

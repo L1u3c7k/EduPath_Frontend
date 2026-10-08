@@ -1053,7 +1053,7 @@
 .resource-card {
   display: flex;
   flex-direction: column;
-  margin-top: 40px;
+  margin-top: 10px;
   color: #30485e;
   font-size: 0.875rem;
   line-height: 1.35;

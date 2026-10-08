@@ -1,0 +1,142 @@
+import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { loginApi, signupApi, refreshAccessTokenApi, logoutApi } from '../api/authApi'
+import { configureAuthHandlers } from '../api/api'
+
+export const AuthContext = createContext(null)
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null)
+  const [token, setToken] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const tokenRef = useRef(null)
+  const navigate = useNavigate()
+
+  const applyToken = useCallback((nextToken, nextUser) => {
+    tokenRef.current = nextToken
+    setToken(nextToken)
+    if (nextUser !== undefined) {
+      setUser(nextUser)
+    }
+  }, [])
+
+  // Helper function to update user state dynamically (e.g. after avatar/profile changes)
+  const updateUser = useCallback((updatedUserData) => {
+    setUser((prevUser) => {
+      if (!prevUser) return updatedUserData
+      return {
+        ...prevUser,
+        ...updatedUserData,
+      }
+    })
+  }, [])
+
+  useEffect(() => {
+    let isMounted = true
+
+    configureAuthHandlers({
+      getToken: () => tokenRef.current,
+      setToken: (nextToken) => {
+        if (!isMounted) return
+        tokenRef.current = nextToken
+        setToken(nextToken)
+      },
+      onUnauthorized: () => {
+        if (!isMounted) return
+        tokenRef.current = null
+        setToken(null)
+        setUser(null)
+        navigate('/login', { replace: true })
+      },
+    })
+
+    const restoreSession = async () => {
+      try {
+        const response = await refreshAccessTokenApi()
+        // Assuming refresh response contains access_token and optional user object
+        const accessToken = typeof response === 'string' ? response : response?.access_token
+        const userData = response?.user ?? undefined
+
+        if (isMounted) {
+          applyToken(accessToken, userData)
+        }
+      } catch {
+        if (isMounted) {
+          applyToken(null, null)
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    restoreSession()
+
+    return () => {
+      isMounted = false // Cleanup flag when component unmounts
+    }
+  }, [applyToken, navigate])
+
+  const login = async (credentials) => {
+    const data = await loginApi(credentials)
+    applyToken(data.access_token, data.user || null)
+    return data
+  }
+
+  const signup = async (userData) => {
+    const data = await signupApi(userData)
+
+    if (data?.access_token) {
+      applyToken(data.access_token, data.user || null)
+      return data
+    }
+
+    return login({
+      email: userData.email,
+      password: userData.password,
+    })
+  }
+
+  const logout = async () => {
+    try {
+      // 1. Send call to backend to destroy the refresh token cookie
+      await logoutApi()
+    } catch (error) {
+      // Log any network error, but continue resetting client state anyway
+      console.error('Logout error on server:', error)
+    } finally {
+      // 2. Clear in-memory access token & user state
+      applyToken(null, null)
+      tokenRef.current = null
+
+      // 3. Redirect user back to login page
+      navigate('/login', { replace: true })
+    }
+  }
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isAuthenticated: Boolean(token),
+        loading,
+        login,
+        signup,
+        logout,
+        updateUser,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export const useAuth = () => {
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider')
+  }
+  return context
+}

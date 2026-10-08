@@ -1,6 +1,7 @@
 import ArrowUpwardRoundedIcon from '@mui/icons-material/ArrowUpwardRounded'
+import QuizReadyButton from './quiz/QuizReadyButton'
 
-function InitialChat({ prompt, onPromptChange, onSubmit, isSending = false, error = '' }) {
+function InitialChat({ prompt, onPromptChange, onSubmit, isSending = false, error = '', quizReady = false, onOpenQuiz, isGeneratingQuiz = false, quizGenerationError = '' }) {
   return (
     <div className="conversation conversation-empty">
       <h1>How can I help you today?</h1>
@@ -13,10 +14,18 @@ function InitialChat({ prompt, onPromptChange, onSubmit, isSending = false, erro
           aria-label="Ask Mentora anything"
           disabled={isSending}
         />
-        <button type="submit" aria-label="Send message" disabled={isSending || !prompt.trim()}>
+        {quizReady && (
+          <QuizReadyButton
+            onClick={onOpenQuiz}
+            isLoading={isGeneratingQuiz}
+          />
+        )}
+        
+        <button className="button" type="submit" aria-label="Send message" disabled={isSending || !prompt.trim()}>
           <ArrowUpwardRoundedIcon />
         </button>
       </form>
+      {quizGenerationError && <p className="chat-status-error" role="alert">{quizGenerationError}</p>}
     </div>
   )
 }

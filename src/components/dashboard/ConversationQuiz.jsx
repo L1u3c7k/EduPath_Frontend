@@ -1,64 +1,223 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import GenerateQuizButton from './quiz/GenerateQuizButton'
 import QuizCard from './quiz/QuizCard'
 import QuizIntro from './quiz/QuizIntro'
+import {
+  generateQuizApi,
+  getActiveQuizApi,
+  submitQuizAnswerApi,
+} from '../../api/quizApi'
 
-const questions = [
-  { text: 'Name one characteristic of a good prompt.', answers: ['clear', 'clarity', 'specific', 'context'], hint: 'Think about the qualities that make instructions easy for an AI to understand.', explanation: 'A good prompt clearly communicates what you want the AI to do.', correctAnswer: 'Clear' },
-  { text: 'What is the main benefit of making a prompt specific?', answers: ['accurate', 'relevant', 'precise', 'desired response'], hint: 'Think about how clear instructions help the AI understand exactly what kind of response you want.', explanation: 'A specific prompt gives the AI clear details about what you want. This reduces ambiguity and helps the AI generate a response that is more relevant, focused, and useful.', correctAnswer: 'It helps the AI understand exactly what you want' },
-  { text: 'You need to compare Python and Java clearly. Which prompt is best?', answers: ['compare python and java', 'table'], hint: 'Include the subjects, format, and specific comparison criteria in your prompt.', explanation: 'A strong comparison prompt names both subjects, specifies the format, and identifies the criteria to compare.', correctAnswer: 'Compare Python and Java in a table using learning difficulty, performance, and common use cases.' },
-  { text: 'Why should a prompt include clear instructions?', answers: ['understand', 'desired response', 'accurate', 'task'], hint: 'Consider how instructions guide the AI toward the intended task and result.', explanation: 'Clear instructions guide the AI toward the intended task and reduce the chance of an irrelevant response.', correctAnswer: 'To help the AI understand the task and produce the desired response' },
-  { text: 'Which prompt demonstrates strong prompt-engineering practices?', answers: ['clear', 'specific', 'context', 'format', 'details'], hint: 'Think about how adding clear details helps the AI understand your expected result.', explanation: 'This prompt gives the AI a clear role, specific task, and desired output, helping it produce a more relevant and useful response.', correctAnswer: 'Act as a beginner-friendly tutor. Explain SQL JOINs with one simple example, then give me three practice questions.' },
-]
+const getQuizQuestions = (quiz) => Array.isArray(quiz?.questions) ? quiz.questions : []
+const getStoredQuestions = (response) =>
+  Array.isArray(response?.stored_questions) ? response.stored_questions : []
 
-const createInitialResults = () => questions.map(() => ({ answer: '', attempts: 0, status: 'idle', submitted: '' }))
+const createResults = (questions) => questions.map((question) => {
+  const attempts = Array.isArray(question.attempts) ? question.attempts : []
+  const finalAttempt = attempts.at(-1)
+  const completed = Boolean(question.completed)
+
+  return {
+    answer: '',
+    attempts: attempts.length,
+    status: completed
+      ? (finalAttempt?.is_correct ? 'correct' : 'incorrect')
+      : (attempts.length ? 'incorrect' : 'idle'),
+    submitted: finalAttempt?.user_answer || '',
+    explanation: finalAttempt?.feedback || '',
+    hint: completed ? '' : (finalAttempt?.feedback || ''),
+    modelAnswer: completed && !finalAttempt?.is_correct ? question.model_answer : '',
+  }
+})
+
+const createStoredResults = (questions) => questions.map((question) => ({
+  answer: '',
+  attempts: Math.max(question.attempts_used || 0, question.is_correct ? 1 : 3),
+  status: question.is_correct ? 'correct' : 'incorrect',
+  submitted: question.user_answer || '',
+  explanation: question.ai_feedback || '',
+  hint: '',
+  modelAnswer: question.model_answer || '',
+  reviewOnly: true,
+}))
 
 function ConversationQuiz({ chatId }) {
-  const [results, setResults] = useState(createInitialResults)
-  const quizCompleted = results.every((result) => result.status === 'correct' || result.attempts >= 3)
+  const [storedQuestions, setStoredQuestions] = useState([])
+  const [storedResults, setStoredResults] = useState([])
+  const [questions, setQuestions] = useState([])
+  const [results, setResults] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [submittingQuestionNumber, setSubmittingQuestionNumber] = useState(null)
+  const [error, setError] = useState('')
+
+  const loadActiveQuiz = useCallback(async () => {
+    if (!chatId) return
+    setIsLoading(true)
+    setError('')
+
+    try {
+      const response = await getActiveQuizApi(chatId)
+      const completedQuestions = getStoredQuestions(response)
+      console.log('Stored questions:', completedQuestions)
+      const activeQuestions = getQuizQuestions(response.quiz)
+      setStoredQuestions(completedQuestions)
+      setStoredResults(createStoredResults(completedQuestions))
+      setQuestions(activeQuestions)
+      setResults(createResults(activeQuestions))
+    } catch (loadError) {
+      setStoredQuestions([])
+      setStoredResults([])
+      setQuestions([])
+      setResults([])
+      setError(loadError.response?.data?.detail || 'Could not load the active quiz.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [chatId])
+
+  useEffect(() => {
+    loadActiveQuiz()
+  }, [loadActiveQuiz])
 
   const changeAnswer = (index, answer) => {
-    setResults((items) => items.map((item, i) => i === index ? { ...item, answer } : item))
+    setResults((current) => current.map((result, resultIndex) =>
+      resultIndex === index ? { ...result, answer } : result
+    ))
   }
 
-  const submitAnswer = (event, index) => {
+  const submitAnswer = async (event, index) => {
     event.preventDefault()
+    const question = questions[index]
     const result = results[index]
-    const answer = result.answer.trim()
-    if (!answer || result.status === 'correct' || result.attempts >= 3) return
-    const normalized = answer.toLowerCase()
-    const correct = questions[index].answers.some((accepted) => normalized.includes(accepted))
-    setResults((items) => items.map((item, i) => i === index ? {
-      ...item,
-      answer: correct ? answer : '',
-      submitted: answer,
-      attempts: item.attempts + 1,
-      status: correct ? 'correct' : 'incorrect',
-    } : item))
+    const answer = result?.answer.trim()
+
+    if (!chatId || !question || !answer || submittingQuestionNumber !== null) return
+
+    setSubmittingQuestionNumber(question.question_number)
+    setError('')
+
+    try {
+      const response = await submitQuizAnswerApi(
+        chatId,
+        question.question_number,
+        answer
+      )
+
+      if (response.error) {
+        setError(response.error)
+        return
+      }
+
+      setResults((current) => current.map((item, resultIndex) => resultIndex === index
+        ? {
+            ...item,
+            answer: '',
+            submitted: answer,
+            attempts: item.attempts + 1,
+            status: response.correct ? 'correct' : 'incorrect',
+            explanation: response.explanation || '',
+            hint: response.hint || '',
+            modelAnswer: response.model_answer || '',
+          }
+        : item
+      ))
+
+      if (response.quiz_completed) {
+        setQuestions((current) => current.map((item, questionIndex) =>
+          questionIndex === index ? { ...item, completed: true } : item
+        ))
+      }
+    } catch (submitError) {
+      setError(submitError.response?.data?.detail || 'Could not submit the answer.')
+    } finally {
+      setSubmittingQuestionNumber(null)
+    }
   }
 
-  const generateAnotherQuiz = () => {
-    setResults(createInitialResults())
+  const generateAnotherQuiz = async () => {
+    if (!chatId) return
+    setIsLoading(true)
+    setError('')
+
+    try {
+      const response = await generateQuizApi(chatId)
+      const completedQuestions = getStoredQuestions(response)
+      console.log('Stored questions:', completedQuestions)
+      const newQuestions = getQuizQuestions(response.quiz)
+      setStoredQuestions(completedQuestions)
+      setStoredResults(createStoredResults(completedQuestions))
+      if (!newQuestions.length) {
+        setError(response.message || 'No new quiz questions are available yet.')
+        return
+      }
+      setQuestions(newQuestions)
+      setResults(createResults(newQuestions))
+    } catch (generateError) {
+      setError(generateError.response?.data?.detail || 'Could not generate another quiz.')
+    } finally {
+      setIsLoading(false)
+    }
   }
+
+  const quizCompleted = questions.length > 0 && results.length === questions.length &&
+    results.every((result) => result.status === 'correct' || result.attempts >= 3)
+  const hasStoredQuestions = storedQuestions.length > 0
+  const hasActiveSession = questions.length > 0
+  const canGenerateAnotherQuiz = quizCompleted || (hasStoredQuestions && !hasActiveSession)
 
   return (
     <div className="quiz-view">
-      <h1>Quiz {chatId ? `for Chat #${chatId}` : ''}</h1>
+      
       <QuizIntro />
-      <div className="quiz-question-list">
-        {questions.map((question, index) => (
-          <QuizCard 
-            key={question.text} 
-            question={question} 
-            index={index} 
-            totalQuestions={questions.length} 
-            result={results[index]} 
-            onChange={changeAnswer} 
-            onSubmit={submitAnswer} 
-          />
-        ))}
-      </div>
-      {quizCompleted && <GenerateQuizButton onClick={generateAnotherQuiz} />}
+      {error && <p className="chat-status-error" role="alert">{error}</p>}
+      {isLoading ? (
+        <p role="status">Loading quiz...</p>
+      ) : (
+        <>
+
+          {questions.length ? (
+            <section className="quiz-section" aria-labelledby="generated-quiz-title">
+              
+              <div className="quiz-question-list">
+                {questions.map((question, index) => (
+                  <QuizCard
+                    key={question.question_number}
+                    question={question}
+                    index={index}
+                    totalQuestions={questions.length}
+                    result={results[index]}
+                    isSubmitting={submittingQuestionNumber === question.question_number}
+                    onChange={changeAnswer}
+                    onSubmit={submitAnswer}
+                  />
+                ))}
+              </div>
+            </section>
+          ) : <div ><p>No quiz questions are available yet.</p></div>}
+          {canGenerateAnotherQuiz && <GenerateQuizButton onClick={generateAnotherQuiz} />}
+          {hasStoredQuestions && (
+            <section className="quiz-section" aria-labelledby="stored-quiz-title">
+              <h1 id="stored-quiz-title">Quiz history</h1>
+              <div className="quiz-question-list">
+                
+                {storedQuestions.map((question, index) => (
+                  <QuizCard
+                    key={question.id || `stored-${question.question_number}`}
+                    question={question}
+                    index={index}
+                    totalQuestions={storedQuestions.length}
+                    result={storedResults[index]}
+                    readOnly
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          
+        </>
+      )}
+      
     </div>
   )
 }

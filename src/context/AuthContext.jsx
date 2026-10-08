@@ -13,7 +13,6 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate()
 
   const applyToken = useCallback((nextToken, nextUser) => {
-  
     tokenRef.current = nextToken
     setToken(nextToken)
     if (nextUser !== undefined) {
@@ -21,18 +20,29 @@ export const AuthProvider = ({ children }) => {
     }
   }, [])
 
+  // Helper function to update user state dynamically (e.g. after avatar/profile changes)
+  const updateUser = useCallback((updatedUserData) => {
+    setUser((prevUser) => {
+      if (!prevUser) return updatedUserData
+      return {
+        ...prevUser,
+        ...updatedUserData,
+      }
+    })
+  }, [])
+
   useEffect(() => {
-    let isMounted = true;
+    let isMounted = true
 
     configureAuthHandlers({
       getToken: () => tokenRef.current,
       setToken: (nextToken) => {
-        if (!isMounted) return;
+        if (!isMounted) return
         tokenRef.current = nextToken
         setToken(nextToken)
       },
       onUnauthorized: () => {
-        if (!isMounted) return;
+        if (!isMounted) return
         tokenRef.current = null
         setToken(null)
         setUser(null)
@@ -42,10 +52,13 @@ export const AuthProvider = ({ children }) => {
 
     const restoreSession = async () => {
       try {
-        const accessToken = await refreshAccessTokenApi()
-        // Only update state if the component is still mounted
+        const response = await refreshAccessTokenApi()
+        // Assuming refresh response contains access_token and optional user object
+        const accessToken = typeof response === 'string' ? response : response?.access_token
+        const userData = response?.user ?? undefined
+
         if (isMounted) {
-          applyToken(accessToken)
+          applyToken(accessToken, userData)
         }
       } catch {
         if (isMounted) {
@@ -61,9 +74,9 @@ export const AuthProvider = ({ children }) => {
     restoreSession()
 
     return () => {
-      isMounted = false; // Cleanup flag when component unmounts
+      isMounted = false // Cleanup flag when component unmounts
     }
-  }, [])
+  }, [applyToken, navigate])
 
   const login = async (credentials) => {
     const data = await loginApi(credentials)
@@ -112,6 +125,7 @@ export const AuthProvider = ({ children }) => {
         login,
         signup,
         logout,
+        updateUser,
       }}
     >
       {children}

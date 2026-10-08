@@ -14,7 +14,7 @@ import ConversationChat from '../../components/dashboard/ConversationChat'
 import ResourcesPanel from '../../components/dashboard/ResourcesPanel'
 import ConversationQuiz from '../../components/dashboard/ConversationQuiz'
 import { NewChatIcon, SidebarIcon } from '../../components/dashboard/DashboardIcons'
-import Settings  from "../Settings/Settings"
+import Settings from "../Settings/Settings"
 import {
   fetchGetChatSessions,
   fetchGetChatHistoryApi,
@@ -26,6 +26,7 @@ import {
 import './Dashboard.css'
 import { useAuth } from '../../context/AuthContext'
 import { getUser } from '../../api/userApi'
+import { generateQuizApi } from '../../api/quizApi'
 
 const QUIZ_CHAT_THRESHOLD = 5
 
@@ -54,17 +55,36 @@ function Dashboard() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [username, setUsername] = useState(user?.name || 'Kira')
-  const [, setUserInfo] = useState(null)
+  const [userInfo, setUserInfo] = useState(null)
+  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false)
+  const [quizGenerationError, setQuizGenerationError] = useState('')
+
+  // Track if profile picture fails to load
+  const [imgError, setImgError] = useState(false)
 
   const menuRef = useRef(null)
   const profileMenuRef = useRef(null)
 
+  // Extract raw profile image URL from context or fetched profile data
+  const currentUserData = userInfo || user
+  const rawImageUrl = currentUserData?.img_url || currentUserData?.img_file || currentUserData?.image_file
+
+  const profileImageUrl = rawImageUrl
+    ? rawImageUrl.startsWith('http')
+      ? rawImageUrl
+      : `http://localhost:8000${rawImageUrl.startsWith('/') ? '' : '/'}${rawImageUrl}`
+    : null
+
+  // Reset image error state whenever profile URL updates
+  useEffect(() => {
+    setImgError(false)
+  }, [profileImageUrl])
+
   const userMessageCount = useMemo(
     () => messages.filter((m) => m.role === 'user').length,
     [messages]
-    
   )
-  const quizUnlocked =  userMessageCount >= QUIZ_CHAT_THRESHOLD
+  const quizUnlocked = userMessageCount >= QUIZ_CHAT_THRESHOLD
 
   const visibleChats = useMemo(
     () =>
@@ -77,7 +97,6 @@ function Dashboard() {
     [chats, search]
   )
 
-  // 1. Defined at component level so it is accessible in JSX
   const loadChatHistory = useCallback(async () => {
     if (!activeChatId) return
     try {
@@ -85,7 +104,6 @@ function Dashboard() {
       if (!data) return
       const rawMessages = Array.isArray(data) ? data : data.messages || []
       setMessages(rawMessages)
-      console.log(messages)
     } catch (error) {
       console.error('Failed to load chat history:', error)
     }
@@ -140,7 +158,6 @@ function Dashboard() {
     return () => { isMounted = false }
   }, [])
 
-  // 2. Clear state or trigger history reload when activeChatId changes
   useEffect(() => {
     if (!activeChatId) {
       setMessages([])
@@ -198,43 +215,36 @@ function Dashboard() {
   }, [])
 
   const submitPrompt = async (event) => {
-  event.preventDefault()
-  const text = prompt.trim()
-  if (!text) return
+    event.preventDefault()
+    const text = prompt.trim()
+    if (!text) return
 
-  const tempId = `temp-${Date.now()}`
-  const tempUserMsg = { id: tempId, role: 'user', text: text, content: text }
-  
-  // Optimistically show the user's message
-  setMessages((current) => [...current, tempUserMsg])
-  setPrompt('')
+    const tempId = `temp-${Date.now()}`
+    const tempUserMsg = { id: tempId, role: 'user', text: text, content: text }
+    
+    setMessages((current) => [...current, tempUserMsg])
+    setPrompt('')
 
-  try {
-    if (!activeChatId) {
-      // 1. Initialize the new chat on the backend
-      const data = await fetchInitializeChatApi(text)
-      const newChatId = data.id || data.chat_id || data.chatId
+    try {
+      if (!activeChatId) {
+        const data = await fetchInitializeChatApi(text)
+        const newChatId = data.id || data.chat_id || data.chatId
 
-      if (newChatId) {
-        setExpandedChats([newChatId])
-        
-        // 2. Fetch the updated sidebar list so the new chat shows up immediately
-        await loadChatSessions()
-
-        // 3. Navigate to the new chat route
-        navigate(`/app/${newChatId}`)
+        if (newChatId) {
+          setExpandedChats([newChatId])
+          await loadChatSessions()
+          navigate(`/app/${newChatId}`)
+        } else {
+          await loadChatSessions()
+        }
       } else {
-        await loadChatSessions()
+        await fetchSendMessageApi(activeChatId, text)
+        await loadChatHistory()
       }
-    } else {
-      // Logic for existing chats
-      await fetchSendMessageApi(activeChatId, text)
-      await loadChatHistory()
+    } catch (error) {
+      console.error('Failed to send message:', error)
     }
-  } catch (error) {
-    console.error('Failed to send message:', error)
   }
-}
 
   const startNewChat = () => {
     setMessages([])
@@ -254,6 +264,25 @@ function Dashboard() {
     if (!quizUnlocked) return
     navigate(`/app/quiz/${chatId}`)
     if (window.matchMedia('(max-width: 720px)').matches) setSidebarOpen(false)
+  }
+
+  const generateQuizAndOpen = async () => {
+    if (!activeChatId || !quizUnlocked || isGeneratingQuiz) return
+
+    setIsGeneratingQuiz(true)
+    setQuizGenerationError('')
+
+    try {
+      const response = await generateQuizApi(activeChatId)
+      console.log('Fetched quiz:', response.quiz ?? response)
+      openQuiz(activeChatId)
+    } catch (error) {
+      setQuizGenerationError(
+        error.response?.data?.detail || 'Could not generate the quiz. Please try again.'
+      )
+    } finally {
+      setIsGeneratingQuiz(false)
+    }
   }
 
   const toggleChat = (chatId) => {
@@ -287,20 +316,25 @@ function Dashboard() {
     setChatToDelete(chat)
   }
 
+  const handleProfileUpdate = (updatedUser) => {
+  if (updatedUser) {
+    setUserInfo((prev) => ({ ...prev, ...updatedUser }))
+    if (updatedUser.name || updatedUser.username) {
+      setUsername(updatedUser.name || updatedUser.username)
+    }
+  }
+}
   const deleteChat = async () => {
     if (!chatToDelete) return
 
     const targetId = chatToDelete.id
 
     try {
-      // 1. Call API endpoint to delete on backend
       await deleteChatApi(targetId)
 
-      // 2. Remove chat from sidebar state list
       setChats((current) => current.filter((item) => item.id !== targetId))
       setExpandedChats((current) => current.filter((id) => id !== targetId))
 
-      // 3. If currently viewing the deleted chat, reset state and navigate back
       if (String(activeChatId) === String(targetId)) {
         setMessages([])
         navigate('/app')
@@ -308,7 +342,6 @@ function Dashboard() {
     } catch (error) {
       console.error('Failed to delete chat session:', error)
     } finally {
-      // 4. Cleanup modal and selection states
       setOpenMenu(null)
       setChatToDelete(null)
     }
@@ -350,7 +383,7 @@ function Dashboard() {
           <h2 id="recent-title">Recent</h2>
           <div className="recent-list hide-scrollbar">
             {visibleChats.map((chat) => (
-            <div  className="recent-group" key={chat.id} ref={openMenu === chat.id ? menuRef : null}>
+            <div className="recent-group" key={chat.id} ref={openMenu === chat.id ? menuRef : null}>
               <div className="recent-group-title">
                 {editingChatId === chat.id ? (
                   <form className="chat-name-form" onSubmit={(event) => saveChatName(event, chat.id)}>
@@ -448,8 +481,23 @@ function Dashboard() {
             aria-expanded={profileMenuOpen}
             onClick={() => setProfileMenuOpen((open) => !open)}
           >
+            {/* Display profile image if available, fallback to first letter of username */}
             <span className="profile-avatar" aria-hidden="true">
-              {username.charAt(0).toUpperCase()}
+              {profileImageUrl && !imgError ? (
+                <img
+                  src={profileImageUrl}
+                  alt={username}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '50%',
+                    objectFit: 'cover'
+                  }}
+                  onError={() => setImgError(true)}
+                />
+              ) : (
+                username.charAt(0).toUpperCase()
+              )}
             </span>
             <span>{username}</span>
           </button>
@@ -491,6 +539,10 @@ function Dashboard() {
             messages={messages}
             setMessages={setMessages}
             prompt={prompt}
+            quizReady={quizUnlocked && Boolean(activeChatId)}
+            onOpenQuiz={generateQuizAndOpen}
+            isGeneratingQuiz={isGeneratingQuiz}
+            quizGenerationError={quizGenerationError}
             onPromptChange={(event) => setPrompt(event.target.value)}
             refetchHistory={loadChatHistory}
             onSubmit={submitPrompt}
@@ -504,7 +556,7 @@ function Dashboard() {
         onClose={() => setResourcesOpen(false)}
       />
 
-      <Settings isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} username={username} onUsernameChange={setUsername} />
+      <Settings isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} username={username} onUsernameChange={setUsername} initialImageUrl={profileImageUrl} onProfileUpdate={handleProfileUpdate} />
 
       {chatToDelete && (
         <div className="delete-chat-backdrop" role="presentation" onMouseDown={() => setChatToDelete(null)}>

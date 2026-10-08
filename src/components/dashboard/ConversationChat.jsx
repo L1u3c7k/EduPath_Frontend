@@ -4,6 +4,7 @@ import ArrowUpwardRoundedIcon from '@mui/icons-material/ArrowUpwardRounded'
 import AssistantChat from './AssistantChat'
 import InitialChat from './InitialChat'
 import UserChat from './UserChat'
+import QuizReadyButton from './quiz/QuizReadyButton'
 import { updateMessageApi } from '../../api/chatApi'
 
 function ConversationChat({
@@ -16,6 +17,10 @@ function ConversationChat({
   isLoading = false,
   error = '',
   refetchHistory,
+  quizReady = false,
+  onOpenQuiz,
+  isGeneratingQuiz = false,
+  quizGenerationError = '',
 }) {
   const listRef = useRef(null)
   const { chatId: activeChatId } = useParams()
@@ -55,6 +60,10 @@ function ConversationChat({
         onSubmit={onSubmit}
         isSending={isSending}
         error={error}
+        quizReady={quizReady}
+        onOpenQuiz={onOpenQuiz}
+        isGeneratingQuiz={isGeneratingQuiz}
+        quizGenerationError={quizGenerationError}
       />
     )
   }
@@ -95,10 +104,19 @@ function ConversationChat({
           aria-label="Ask Mentora anything"
           disabled={isSending}
         />
-        <button type="submit" aria-label="Send message" disabled={isSending || !prompt.trim()}>
+
+        {quizReady && (
+          <QuizReadyButton
+            onClick={onOpenQuiz}
+            isLoading={isGeneratingQuiz}
+          />
+        )}
+        
+        <button className='button' type="submit" aria-label="Send message" disabled={isSending || !prompt.trim()}>
           <ArrowUpwardRoundedIcon />
         </button>
       </form>
+      {quizGenerationError && <p className="chat-status-error" role="alert">{quizGenerationError}</p>}
     </div>
   )
 }
